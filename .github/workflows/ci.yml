@@ -31,12 +31,19 @@ jobs:
       - run: npm test
       - run: npm run build
 
-  package-windows:
-    name: Package (Windows installer)
+  package:
+    name: Package (${{ matrix.name }})
     needs: check
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, name: Windows }
+          - { os: macos-latest, name: macOS }
+          - { os: ubuntu-latest, name: Linux }
     env:
-      CSC_IDENTITY_AUTO_DISCOVERY: 'false' # unsigned build
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false' # unsigned builds
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -47,6 +54,11 @@ jobs:
       - run: npm run dist
       - uses: actions/upload-artifact@v4
         with:
-          name: server-monitor-windows
-          path: dist/Server-Monitor-Setup-*.exe
+          name: server-monitor-${{ matrix.name }}
+          path: |
+            dist/Server-Monitor-*.exe
+            dist/Server-Monitor-*.dmg
+            dist/Server-Monitor-*.zip
+            dist/Server-Monitor-*.AppImage
+            dist/Server-Monitor-*.deb
           if-no-files-found: error
