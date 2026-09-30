@@ -230,9 +230,12 @@ function registerIpc(): void {
   ipcMain.handle('server:remove', (_e, id: string) => {
     monitor.remove(id)
     removeServer(id)
-    const positions = { ...getSettings().positions }
-    delete positions[id]
-    patchSettings({ positions })
+    const { positions, cardScales, expanded } = getSettings()
+    patchSettings({
+      positions: Object.fromEntries(Object.entries(positions).filter(([k]) => k !== id)),
+      cardScales: Object.fromEntries(Object.entries(cardScales).filter(([k]) => k !== id)),
+      expanded: Object.fromEntries(Object.entries(expanded).filter(([k]) => k !== id))
+    })
     broadcast('servers', listServers())
   })
 

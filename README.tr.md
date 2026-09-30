@@ -15,6 +15,7 @@
 - **Sunucu başına canlı kart:** değerler arasında yumuşak geçen CPU / RAM / Disk halkaları, CPU grafiği, ağ hızı, yük, gecikme.
 - **Uptime takibi:** sunucu uptime'ı, ölçülen erişilebilirlik (24 sa / 7 gün / 30 gün) ve kesinti sayacı.
 - **Docker, PM2, systemd, portlar:** çalışan/toplam konteyner, PM2 süreçleri, çalışan ve hatalı servisler, dışa açık / yerel dinleyen portlar.
+- **Açılıp kapanan alt ağaçlar:** kartlardaki Docker / PM2 / Servisler / Portlar chip'ine (veya **Tümünü aç**'a) tıklayın: sunucu → grup → tek tek konteyner, süreç, servis ve portlar, sağlık durumuna göre renkli. Uzun listelerde en önemli öğeler önce gelir, kalanı "+N tane daha" düğümüyle açılır. Açık ağaçlar hatırlanır ve duvar kağıdında da görünür.
 - **Üç mod:** pencere, mini widget ve masaüstü simgeleriyle sistem duvar kağıdı _arasında_ çalışan **canlı duvar kağıdı** (Windows 10/11, 24H2+ dahil).
 - **Serbest veya otomatik yerleşim:** dairesel, ızgara veya serbest; genel kart boyutu kaydırıcısı ve kart başına boyutlandırma. Her şey hatırlanır.
 - **Tepsi uygulaması:** pencereyi kapatınca izleme arka planda sürer. Duvar kağıdı modundan `Ctrl+Alt+M` ile dönersiniz.

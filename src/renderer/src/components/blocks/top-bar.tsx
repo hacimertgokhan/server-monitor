@@ -1,4 +1,16 @@
-import { Grid3x3, LayoutGrid, Maximize, MonitorPlay, Move, Orbit, PictureInPicture2, Plus, RotateCcw, Settings2 } from 'lucide-react'
+import {
+  Grid3x3,
+  LayoutGrid,
+  ListTree,
+  Maximize,
+  MonitorPlay,
+  Move,
+  Orbit,
+  PictureInPicture2,
+  Plus,
+  RotateCcw,
+  Settings2
+} from 'lucide-react'
 import type { AppMode, LayoutMode } from '@shared/types'
 import { Button } from '@/components/ui/button'
 import { useT } from '@/lib/i18n'
@@ -17,6 +29,8 @@ interface Props {
   onSettings: () => void
   onResetLayout: () => void
   onFit: () => void
+  anyExpanded: boolean
+  onToggleAll: () => void
   isDemo: boolean
   summary: { total: number; online: number; offline: number; avgCpu: number; rx: number; tx: number }
 }
@@ -63,6 +77,8 @@ export function TopBar({
   onSettings,
   onResetLayout,
   onFit,
+  anyExpanded,
+  onToggleAll,
   isDemo,
   summary
 }: Props) {
@@ -132,6 +148,17 @@ export function TopBar({
             { id: 'wallpaper', label: t('Wallpaper'), icon: MonitorPlay }
           ]}
         />
+        <Button
+          variant="ghost"
+          size="icon"
+          title={anyExpanded ? t('Collapse all') : t('Expand all')}
+          aria-label={anyExpanded ? t('Collapse all') : t('Expand all')}
+          aria-pressed={anyExpanded}
+          onClick={onToggleAll}
+          className={anyExpanded ? 'text-foreground' : undefined}
+        >
+          <ListTree />
+        </Button>
         <Button variant="ghost" size="icon" title={t('Fit to screen')} aria-label={t('Fit to screen')} onClick={onFit}>
           <Maximize />
         </Button>

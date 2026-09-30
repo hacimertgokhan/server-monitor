@@ -111,7 +111,7 @@ body,
 }
 .react-flow__handle {
   opacity: 0;
-  pointer-events: none;
+  pointer-events: none !important; /* handles are only anchors for edges; never intercept clicks */
   width: 1px;
   height: 1px;
   min-width: 0;

@@ -19,6 +19,7 @@
 - **Live per-server card**: CPU, RAM and disk rings that glide smoothly between values, CPU sparkline, network throughput, load, latency.
 - **Uptime tracking**: server uptime plus measured availability (24 h / 7 d / 30 d) and outage counter.
 - **Docker, PM2, systemd, ports**: running/total containers, PM2 processes, running and failed services, listening TCP/UDP ports with public/local exposure.
+- **Expandable sub-trees**: click a Docker / PM2 / Services / Ports chip on a card (or **Expand all**) to grow a tree in the flowchart: server → group → every container, process, service or port, colour-coded by health. Long lists show the most relevant items first with a "+N more" node. Open trees are remembered and shown on the wallpaper too.
 - **Three modes**: window, mini widget, and **live wallpaper** rendered _between_ your desktop icons and the system wallpaper (Windows 10 and 11, including 24H2+).
 - **Free or automatic layout**: radial, grid or free placement; global card size slider and per-card resize handle. Everything is remembered.
 - **Tray app**: closing the window keeps monitoring in the background. `Ctrl+Alt+M` always brings you back from wallpaper mode.
