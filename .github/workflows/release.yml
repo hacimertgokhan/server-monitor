@@ -1,6 +1,6 @@
 name: Release
 
-# Push a tag such as v0.2.0 to build the Windows installer and publish a GitHub release.
+# Push a tag such as v0.4.0 to build installers for Windows, macOS and Linux and publish a GitHub release.
 on:
   push:
     tags: ['v*']
@@ -9,8 +9,16 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    runs-on: windows-latest
+  build:
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, name: windows }
+          - { os: macos-latest, name: macos }
+          - { os: ubuntu-latest, name: linux }
     env:
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
     steps:
@@ -23,9 +31,31 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.name }}
+          path: |
+            dist/Server-Monitor-*.exe
+            dist/Server-Monitor-*.dmg
+            dist/Server-Monitor-*.zip
+            dist/Server-Monitor-*.AppImage
+            dist/Server-Monitor-*.deb
+          if-no-files-found: error
+
+  publish:
+    name: Publish release
+    needs: build
+    # Publish whatever built successfully: a platform failure should not block the others.
+    if: ${{ !cancelled() && needs.build.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: release-files
+      - run: ls -la release-files
       - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          files: |
-            dist/Server-Monitor-Setup-*.exe
-            dist/Server-Monitor-Setup-*.exe.blockmap
+          files: release-files/*

@@ -1,13 +1,14 @@
 appId: io.github.hacimertgokhan.servermonitor
 productName: Server Monitor
 copyright: Copyright © 2026 Hacı Mert Gökhan
-artifactName: Server-Monitor-Setup-${version}.${ext}
 directories:
   buildResources: resources
   output: dist
 files:
   - out/**/*
   - package.json
+
+# ---- Windows
 win:
   icon: resources/icon.png
   target:
@@ -17,3 +18,31 @@ nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   shortcutName: Server Monitor
+  artifactName: Server-Monitor-Setup-${version}.${ext}
+
+# ---- macOS (unsigned: on first launch right-click the app and choose Open)
+mac:
+  icon: resources/icon.png
+  category: public.app-category.developer-tools
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
+  artifactName: Server-Monitor-${version}-mac-${arch}.${ext}
+dmg:
+  title: Server Monitor ${version}
+
+# ---- Linux
+linux:
+  icon: resources/icon.png
+  category: Utility
+  synopsis: Live SSH server monitor
+  description: Live SSH server monitor with a flowchart dashboard, Docker/PM2/systemd insight and a wallpaper mode.
+  maintainer: Hacı Mert Gökhan <hacimertgokhan@gmail.com>
+  target:
+    - target: AppImage
+      arch: [x64]
+    - target: deb
+      arch: [x64]
+  artifactName: Server-Monitor-${version}-linux-${arch}.${ext}
