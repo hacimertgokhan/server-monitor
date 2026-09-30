@@ -6,6 +6,11 @@ import { DEMO_SERVERS, demoStatus } from './demo'
 const api: Api | undefined = (window as unknown as { api?: Api }).api
 export const hasBackend = !!api
 
+/** 'win32' | 'darwin' | 'linux' (guessed from the user agent in the browser preview). */
+export const platform: string =
+  api?.platform ?? (/Mac/i.test(navigator.userAgent) ? 'darwin' : /Linux|X11/i.test(navigator.userAgent) ? 'linux' : 'win32')
+export const isMac = platform === 'darwin'
+
 const queryMode = (): AppMode => {
   const m = new URLSearchParams(location.search).get('mode')
   return m === 'mini' || m === 'wallpaper' ? m : 'window'

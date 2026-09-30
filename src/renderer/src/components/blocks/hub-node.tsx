@@ -45,21 +45,21 @@ function HubNodeImpl({ data }: NodeProps<HubFlowNode>) {
         className="relative flex size-full flex-col items-center justify-center rounded-full border bg-card text-center shadow-[0_0_80px_-20px_rgba(201,199,199,0.25)]"
         style={{ borderColor: `${tone}66` }}
       >
-        <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-[11.5px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
           <User className="size-3" /> {t('Me')}
         </div>
         <div className="mt-1 text-[44px] font-extralight leading-none tabular-nums tracking-tight text-foreground">
           {now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false })}
         </div>
-        <div className="mt-1 text-[11px] text-muted-foreground">
+        <div className="mt-1 text-[12px] text-muted-foreground">
           {now.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })}
         </div>
-        <div className="mt-3 flex items-center gap-1.5 text-[11px]" style={{ color: tone }}>
+        <div className="mt-3 flex items-center gap-1.5 text-[12px]" style={{ color: tone }}>
           <span className="size-1.5 rounded-full" style={{ background: tone }} />
           {data.total === 0 ? t('No servers') : t('{online}/{total} online', { online: data.online, total: data.total })}
         </div>
         {data.online > 0 && (
-          <div className="mt-1 flex items-center gap-2 font-mono text-[10px] text-muted-foreground">
+          <div className="mt-1 flex items-center gap-2 font-mono text-[11.5px] text-muted-foreground">
             <span>
               CPU <AnimatedNumber value={data.avgCpu} suffix="%" />
             </span>
@@ -69,7 +69,7 @@ function HubNodeImpl({ data }: NodeProps<HubFlowNode>) {
           </div>
         )}
         {data.online > 0 && (
-          <div className="mt-0.5 flex items-center gap-2 font-mono text-[10px] text-dim">
+          <div className="mt-0.5 flex items-center gap-2 font-mono text-[11.5px] text-subtle">
             <span className="inline-flex items-center gap-0.5">
               <ArrowDown className="size-2.5" />
               {formatRate(data.rx)}

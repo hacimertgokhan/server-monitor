@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Background, BackgroundVariant, ReactFlow, ReactFlowProvider, useNodesState, useReactFlow, useStore } from '@xyflow/react'
 import type { Edge, Node } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import type { ExpandMode, ExpandedGroups, GroupKey, LayoutMode, ServerInfo, ServerStatus } from '@shared/types'
+import type { ExpandMode, ExpandedGroups, GroupKey, LayoutMode, LogKind, ServerInfo, ServerStatus } from '@shared/types'
 import { autoLayout, clampScale, dirFor, radialLayout, treeOffsets } from '@/lib/layout'
 import type { ClusterInput, Point } from '@/lib/layout'
 import { GROUP_KEYS, buildGroup } from '@/lib/tree'
@@ -38,6 +38,7 @@ export interface FlowViewProps {
   onCardScale?: (id: string, scale: number) => void
   onToggleGroup?: (id: string, group: GroupKey) => void
   onGroupMode?: (id: string, group: GroupKey, mode: ExpandMode) => void
+  onOpenLogs?: (serverId: string, kind: LogKind, name: string) => void
 }
 
 /** Re-fits when the server set / layout / open sub-trees change; in wallpaper mode also when the container or sizes change. */
@@ -68,7 +69,8 @@ function Flow(props: FlowViewProps) {
     onFreePlacement,
     onCardScale,
     onToggleGroup,
-    onGroupMode
+    onGroupMode,
+    onOpenLogs
   } = props
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const { getNodes } = useReactFlow()
@@ -250,6 +252,7 @@ function Flow(props: FlowViewProps) {
                 scale: scales[i],
                 interactive,
                 onMore: (sid: string, gk: GroupKey) => onGroupMode?.(sid, gk, leaf.hidden ? 'all' : 'few'),
+                onOpenLogs,
                 parent: s.id,
                 dx: it.dx,
                 dy: it.dy
@@ -276,7 +279,8 @@ function Flow(props: FlowViewProps) {
     setNodes,
     handleScale,
     onToggleGroup,
-    onGroupMode
+    onGroupMode,
+    onOpenLogs
   ])
 
   const pulseEdges = useMemo<Edge[]>(

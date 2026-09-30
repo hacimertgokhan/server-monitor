@@ -21,13 +21,16 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-dim: var(--dim);
+  --color-subtle: var(--subtle);
   --color-ok: var(--ok);
   --color-bad: var(--bad);
   --color-warn: var(--warn);
   --color-caution: var(--caution);
   --color-info: var(--info);
-  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
-  --font-mono: 'Cascadia Mono', 'Cascadia Code', Consolas, monospace;
+  --font-sans:
+    'Segoe UI Variable Text', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Ubuntu', 'Cantarell', 'Noto Sans',
+    system-ui, sans-serif;
+  --font-mono: 'Cascadia Mono', 'Cascadia Code', 'SF Mono', Menlo, 'JetBrains Mono', 'DejaVu Sans Mono', Consolas, monospace;
   --radius-lg: 14px;
   --radius-md: 10px;
   --radius-sm: 6px;
@@ -48,6 +51,7 @@
   --input: #272727;
   --ring: #5c5959;
   --dim: #5c5959;
+  --subtle: #8a8686; /* readable small text (AA on the card background); --dim is for lines and borders only */
   --ok: #8fbf9f;
   --bad: #d98282;
   --warn: #e0a070;

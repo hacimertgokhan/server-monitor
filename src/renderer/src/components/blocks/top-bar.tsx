@@ -7,6 +7,7 @@ import {
   Move,
   Orbit,
   PictureInPicture2,
+  Plug,
   Plus,
   RotateCcw,
   Settings2
@@ -15,6 +16,7 @@ import type { AppMode, LayoutMode } from '@shared/types'
 import { Button } from '@/components/ui/button'
 import { useT } from '@/lib/i18n'
 import { MAX_SCALE, MIN_SCALE } from '@/lib/layout'
+import { isMac } from '@/lib/use-monitor'
 import { cn, formatRate } from '@/lib/utils'
 import { AnimatedNumber } from './motion'
 
@@ -27,6 +29,9 @@ interface Props {
   onCardScale: (v: number) => void
   onAdd: () => void
   onSettings: () => void
+  onMcp: () => void
+  /** MCP endpoint is listening (dot on the button). */
+  mcpActive: boolean
   onResetLayout: () => void
   onFit: () => void
   anyExpanded: boolean
@@ -75,6 +80,8 @@ export function TopBar({
   onCardScale,
   onAdd,
   onSettings,
+  onMcp,
+  mcpActive,
   onResetLayout,
   onFit,
   anyExpanded,
@@ -85,15 +92,18 @@ export function TopBar({
   const t = useT()
   return (
     <header
-      className="drag flex h-10 shrink-0 items-center justify-between gap-3 border-b border-border bg-background pl-4"
-      style={{ paddingRight: 'calc(100vw - env(titlebar-area-width, 100vw) + 12px)' }}
+      className="drag flex h-10 shrink-0 items-center justify-between gap-3 border-b border-border bg-background"
+      style={{
+        paddingLeft: isMac ? 88 : 16 /* room for the macOS traffic lights */,
+        paddingRight: 'calc(100vw - env(titlebar-area-width, 100vw) + 12px)'
+      }}
     >
       <div className="flex min-w-0 items-center gap-4 text-xs">
         <span className="flex shrink-0 items-center gap-2 font-medium text-foreground">
           <span className="size-2 rounded-full bg-foreground/80" />
           Server Monitor
         </span>
-        {isDemo && <span className="rounded bg-caution/15 px-1.5 py-0.5 text-[10px] font-medium text-caution">DEMO</span>}
+        {isDemo && <span className="rounded bg-caution/15 px-1.5 py-0.5 text-[11.5px] font-medium text-caution">DEMO</span>}
         <div className="flex items-center gap-3 truncate text-muted-foreground">
           <span className="shrink-0">
             <span className="text-ok">{summary.online}</span>/{summary.total} {t('online')}
@@ -164,6 +174,10 @@ export function TopBar({
         </Button>
         <Button variant="ghost" size="icon" title={t('Reset layout')} aria-label={t('Reset layout')} onClick={onResetLayout}>
           <RotateCcw />
+        </Button>
+        <Button variant="ghost" size="icon" title={t('Agents (MCP)')} aria-label={t('Agents (MCP)')} onClick={onMcp} className="relative">
+          <Plug />
+          {mcpActive && <span className="absolute right-1 top-1 size-1.5 rounded-full bg-ok" />}
         </Button>
         <Button variant="ghost" size="icon" title={t('Settings')} aria-label={t('Settings')} onClick={onSettings}>
           <Settings2 />

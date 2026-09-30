@@ -2,6 +2,7 @@ import { Maximize2, MonitorPlay } from 'lucide-react'
 import type { AppMode, ServerInfo, ServerStatus } from '@shared/types'
 import { Button } from '@/components/ui/button'
 import { useT } from '@/lib/i18n'
+import { isMac } from '@/lib/use-monitor'
 import { formatUptime } from '@/lib/utils'
 import { Bar } from './motion'
 import { StateDot, diskSummary } from './server-node'
@@ -17,9 +18,9 @@ interface Props {
 function Meter({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="w-7 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="w-7 text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground">{label}</span>
       <Bar value={value} />
-      <span className="w-8 text-right font-mono text-[10px] tabular-nums text-muted-foreground">{value.toFixed(0)}%</span>
+      <span className="w-8 text-right font-mono text-[11.5px] tabular-nums text-muted-foreground">{value.toFixed(0)}%</span>
     </div>
   )
 }
@@ -30,10 +31,10 @@ export function MiniView({ servers, statuses, summary, onMode, onSelect }: Props
   return (
     <div className="flex h-full flex-col bg-background">
       <header
-        className="drag flex h-8 shrink-0 items-center justify-between pl-3"
-        style={{ paddingRight: 'calc(100vw - env(titlebar-area-width, 100vw) + 4px)' }}
+        className="drag flex h-8 shrink-0 items-center justify-between"
+        style={{ paddingLeft: isMac ? 84 : 12, paddingRight: 'calc(100vw - env(titlebar-area-width, 100vw) + 4px)' }}
       >
-        <span className="text-[11px] text-muted-foreground">
+        <span className="text-[12px] text-muted-foreground">
           <span className="text-ok">{summary.online}</span>/{summary.total} {t('online')}
         </span>
         <div className="flex">
@@ -64,10 +65,12 @@ export function MiniView({ servers, statuses, summary, onMode, onSelect }: Props
                   <StateDot status={st} />
                   <span className="truncate">{s.name}</span>
                 </span>
-                <span className="shrink-0 font-mono text-[10px] text-dim">{off ? t('offline') : formatUptime(st?.uptimeSec ?? 0)}</span>
+                <span className="shrink-0 font-mono text-[11.5px] text-subtle">
+                  {off ? t('offline') : formatUptime(st?.uptimeSec ?? 0)}
+                </span>
               </div>
               {off ? (
-                <div className="text-[11px] text-bad/80">{st?.error ? t(st.error) : ''}</div>
+                <div className="text-[12px] text-bad/80">{st?.error ? t(st.error) : ''}</div>
               ) : (
                 <div className="space-y-1">
                   <Meter label="CPU" value={st?.cpu ?? 0} />

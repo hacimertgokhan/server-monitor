@@ -81,7 +81,7 @@ function ResizeGrip({
       onClick={(e) => e.stopPropagation()}
       title={t('Drag to resize')}
     >
-      <svg width="10" height="10" viewBox="0 0 10 10" className="text-dim">
+      <svg width="10" height="10" viewBox="0 0 10 10" className="text-subtle">
         <path d="M9 1 1 9M9 5 5 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
       </svg>
     </div>
@@ -153,11 +153,11 @@ function ServerNodeImpl({ data }: NodeProps<ServerFlowNode>) {
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <StateDot status={s} />
-            <span className="truncate text-[15px] font-semibold text-foreground">{info.name}</span>
+            <span className="truncate text-[16px] font-semibold text-foreground">{info.name}</span>
           </div>
-          <div className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground">
+          <div className="mt-0.5 truncate font-mono text-[12px] text-muted-foreground">
             {info.host}
-            {s?.os ? <span className="text-dim"> · {s.os}</span> : null}
+            {s?.os ? <span className="text-subtle"> · {s.os}</span> : null}
           </div>
         </div>
         <Badge variant={s?.availability.pct24h == null ? 'muted' : (s.availability.pct24h ?? 100) >= 99.5 ? 'ok' : 'warn'}>
@@ -190,7 +190,7 @@ function ServerNodeImpl({ data }: NodeProps<ServerFlowNode>) {
             <Sparkline values={s?.cpuHistory ?? []} />
           </div>
 
-          <div className="mt-1 flex items-center justify-between font-mono text-[11px] text-muted-foreground">
+          <div className="mt-1 flex items-center justify-between font-mono text-[12px] text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               <ArrowDown className="size-3" style={{ color: COLORS.ok }} />
               {formatRate(s?.netRx ?? 0)}

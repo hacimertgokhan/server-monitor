@@ -48,12 +48,12 @@ export function RingGauge({ value, label, sub, size = 66, stroke = 6, dim, class
             transition={{ duration: 1.3, ease: EASE }}
           />
         </svg>
-        <div className="absolute inset-0 flex items-center justify-center text-[15px] font-semibold tabular-nums text-foreground">
+        <div className="absolute inset-0 flex items-center justify-center text-[16px] font-semibold tabular-nums text-foreground">
           <AnimatedNumber value={v} suffix="%" />
         </div>
       </div>
-      <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
-      {sub !== undefined && <div className="max-w-[92px] truncate text-[10px] text-dim">{sub}</div>}
+      <div className="text-[11.5px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      {sub !== undefined && <div className="max-w-[92px] truncate text-[11.5px] text-subtle">{sub}</div>}
     </div>
   )
 }

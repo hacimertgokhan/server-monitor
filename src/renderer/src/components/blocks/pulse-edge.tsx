@@ -58,7 +58,7 @@ export function PulseEdge({ id, sourceX, sourceY, targetX, targetY, data }: Edge
       {state === 'online' && data!.latency > 0 && (
         <EdgeLabelRenderer>
           <div
-            className="pointer-events-none absolute rounded bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
+            className="pointer-events-none absolute rounded bg-background px-1.5 py-0.5 font-mono text-[11.5px] text-muted-foreground"
             style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)` }}
           >
             {data!.latency} ms
