@@ -1,4 +1,4 @@
-import type { ContainerInfo, DiskInfo, PortInfo, Pm2Proc, ServerStatus } from '@shared/types'
+import type { ContainerInfo, DiskInfo, LogKind, PortInfo, Pm2Proc, ServerStatus } from '@shared/types'
 
 /**
  * Read-only shell probes executed over SSH. Nothing here writes to the remote host.
@@ -42,6 +42,56 @@ elif command -v netstat >/dev/null 2>&1; then netstat -tulnp 2>/dev/null | tail 
 else echo '__NONE__'; fi
 echo '@@END'
 `
+
+// ---------------------------------------------------------------- logs (on demand, read-only)
+/** Names we are willing to put in a shell command: no quotes, spaces, slashes or shell metacharacters. */
+export const SAFE_NAME = /^[A-Za-z0-9][A-Za-z0-9_.:@+-]{0,127}$/
+
+export const LOG_LINES_MIN = 10
+export const LOG_LINES_MAX = 2000
+/** Upper bound on what one request may return, so a chatty container cannot flood the connection. */
+export const LOG_MAX_BYTES = 400_000
+
+const PM2_FIND = `PM2=$(command -v pm2 2>/dev/null)
+if [ -z "$PM2" ]; then for p in /usr/local/bin/pm2 /usr/bin/pm2 "$HOME/.npm-global/bin/pm2" "$HOME/.local/bin/pm2"; do [ -x "$p" ] && PM2=$p && break; done; fi
+if [ -z "$PM2" ] && [ -s "$HOME/.nvm/nvm.sh" ]; then . "$HOME/.nvm/nvm.sh" >/dev/null 2>&1; PM2=$(command -v pm2 2>/dev/null); fi`
+
+/**
+ * Builds the shell script that tails one container / PM2 process / systemd unit, or null when the name is unsafe.
+ * The name is validated against SAFE_NAME (which cannot contain a quote) and then single-quoted; callers additionally
+ * check it against the names the server itself reported.
+ */
+export function buildLogScript(kind: LogKind, name: string, lines: number): string | null {
+  if (!SAFE_NAME.test(name)) return null
+  const n = Math.max(LOG_LINES_MIN, Math.min(LOG_LINES_MAX, Math.floor(lines) || 200))
+  const q = `'${name}'`
+  const cap = `tail -c ${LOG_MAX_BYTES}`
+  if (kind === 'docker') {
+    return `export LC_ALL=C
+if command -v docker >/dev/null 2>&1; then docker logs --tail ${n} --timestamps ${q} 2>&1 | ${cap}; else echo 'docker: command not found'; fi
+echo '@@END'
+`
+  }
+  if (kind === 'pm2') {
+    return `export LC_ALL=C
+${PM2_FIND}
+if [ -z "$PM2" ]; then echo 'pm2: command not found'
+elif [ ! -S "\${PM2_HOME:-$HOME/.pm2}/rpc.sock" ]; then echo 'pm2: daemon is not running for this user'
+else "$PM2" logs ${q} --nostream --lines ${n} --timestamp 2>&1 | ${cap}; fi
+echo '@@END'
+`
+  }
+  return `export LC_ALL=C
+if command -v journalctl >/dev/null 2>&1; then journalctl -u ${q} -n ${n} --no-pager -o short-iso 2>&1 | ${cap}; else echo 'journalctl: command not found'; fi
+echo '@@END'
+`
+}
+
+/** Text before the trailing @@END marker, or null when the marker is missing (connection died mid-command). */
+export function logBody(out: string): string | null {
+  const i = out.lastIndexOf('@@END')
+  return i < 0 ? null : out.slice(0, i).replace(/\r\n/g, '\n')
+}
 
 export function splitSections(out: string): Record<string, string[]> {
   const sections: Record<string, string[]> = {}
