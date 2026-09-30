@@ -9,6 +9,8 @@ Only the latest release receives security fixes.
 Please **do not open a public issue**. Use GitHub's private reporting instead:
 [Report a vulnerability](https://github.com/hacimertgokhan/server-monitor/security/advisories/new).
 
+If GitHub reporting is not an option, email [hacimertgokhan@gmail.com](mailto:hacimertgokhan@gmail.com) (website: [hacimertgokhan.com](https://hacimertgokhan.com)).
+
 Include what you found, how to reproduce it and the affected version. You can expect an acknowledgement within a few days.
 
 ## Scope and design notes

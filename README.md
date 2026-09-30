@@ -94,6 +94,16 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 - Availability is measured only while the app is running.
 - Windows only for the packaged app; SSH targets must be Linux.
 
+## Author & contact
+
+**Hacı Mert Gökhan**
+
+- Website: [hacimertgokhan.com](https://hacimertgokhan.com)
+- Email: [hacimertgokhan@gmail.com](mailto:hacimertgokhan@gmail.com)
+- GitHub: [@hacimertgokhan](https://github.com/hacimertgokhan)
+
+Bugs and ideas: [open an issue](https://github.com/hacimertgokhan/server-monitor/issues/new/choose).
+
 ## License
 
 [MIT](LICENSE) © Hacı Mert Gökhan

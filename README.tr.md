@@ -57,6 +57,16 @@ npm run promo      # docs/media'yı yeniden üretir
 
 Katkıdan önce [CONTRIBUTING.md](CONTRIBUTING.md) dosyasına bakın. Güvenlik açığı bildirimi için [SECURITY.md](SECURITY.md).
 
+## Yazar ve iletişim
+
+**Hacı Mert Gökhan**
+
+- Web sitesi: [hacimertgokhan.com](https://hacimertgokhan.com)
+- E-posta: [hacimertgokhan@gmail.com](mailto:hacimertgokhan@gmail.com)
+- GitHub: [@hacimertgokhan](https://github.com/hacimertgokhan)
+
+Hata ve fikirler için: [issue açın](https://github.com/hacimertgokhan/server-monitor/issues/new/choose).
+
 ## Lisans
 
 [MIT](LICENSE) © Hacı Mert Gökhan
