@@ -59,9 +59,13 @@
     "vite": "^7.3.6",
     "vitest": "^5.0.2"
   },
-  "author": "Hacı Mert Gökhan (https://github.com/hacimertgokhan)",
+  "author": {
+    "name": "Hacı Mert Gökhan",
+    "email": "hacimertgokhan@gmail.com",
+    "url": "https://hacimertgokhan.com"
+  },
   "license": "MIT",
-  "homepage": "https://github.com/hacimertgokhan/server-monitor#readme",
+  "homepage": "https://hacimertgokhan.com",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/hacimertgokhan/server-monitor.git"
@@ -71,13 +75,20 @@
   },
   "keywords": [
     "ssh",
+    "server-monitoring",
     "monitoring",
+    "dashboard",
     "electron",
     "react",
+    "typescript",
     "docker",
     "pm2",
+    "systemd",
     "wallpaper",
-    "dashboard"
+    "live-wallpaper",
+    "windows",
+    "devops",
+    "sysadmin"
   ],
   "engines": {
     "node": ">=22"

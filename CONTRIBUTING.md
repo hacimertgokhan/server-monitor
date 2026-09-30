@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping! This is a small project; the workflow is deliberately light.
+Thanks for helping! Questions? Open a discussion/issue or write to [hacimertgokhan@gmail.com](mailto:hacimertgokhan@gmail.com). This is a small project; the workflow is deliberately light.
 
 ## Setup
 

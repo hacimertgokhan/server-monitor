@@ -1,5 +1,6 @@
 appId: io.github.hacimertgokhan.servermonitor
 productName: Server Monitor
+copyright: Copyright © 2026 Hacı Mert Gökhan
 artifactName: Server-Monitor-Setup-${version}.${ext}
 directories:
   buildResources: resources
