@@ -22,12 +22,37 @@ for (const f of sources.filter((p) => p.includes(join('src', 'renderer')))) {
   for (const m of text.matchAll(/\bt\(\s*'((?:[^'\\]|\\.)*)'/g)) used.add(m[1].replace(/\\'/g, "'"))
 }
 
+/**
+ * Labels that reach t() through a variable (t(title), t(CAP_LABEL[k]) ...) are declared as `title|text|label: '...'`
+ * or as values of a lookup object; collect every quoted string of those declarations so they are checked as well.
+ */
+const dynamicFiles = ['mcp-policy.tsx', 'mcp-agents.tsx', 'mcp-activity.tsx']
+const dynamic = new Set<string>()
+for (const f of sources.filter((p) => dynamicFiles.some((d) => p.endsWith(d)))) {
+  const text = readFileSync(f, 'utf8')
+  for (const m of text.matchAll(/\b(?:title|text|label|read|logs|exec): '((?:[^'\\]|\\.)*)'/g)) dynamic.add(m[1].replace(/\\'/g, "'"))
+}
+
+/** Every quoted string anywhere in the renderer: a catalogue entry is "in use" if its text appears in the code. */
+const literals = new Set<string>()
+for (const f of sources.filter((p) => p.includes(join('src', 'renderer')))) {
+  for (const m of readFileSync(f, 'utf8').matchAll(/'((?:[^'\\\n]|\\.)*)'/g)) literals.add(m[1].replace(/\\'/g, "'"))
+}
+
 // Error strings produced by the main process and translated in the renderer via t(error).
-const mainErrors = [...readFileSync(join(SRC, 'main', 'monitor.ts'), 'utf8').matchAll(/'([A-Z][^'\n]* [^'\n]*)'/g)].map((m) => m[1])
+const mainErrors = ['monitor.ts', 'store.ts', 'mcp-store.ts'].flatMap((f) =>
+  [...readFileSync(join(SRC, 'main', f), 'utf8').matchAll(/'([A-Z][^'\n]* [^'\n]*)'/g)].map((m) => m[1])
+)
 
 describe('i18n catalogue', () => {
   it('has a Turkish translation for every string used in the UI', () => {
     const missing = [...used].filter((k) => !hasTranslation('tr', k))
+    expect(missing).toEqual([])
+  })
+
+  it('has a Turkish translation for labels that reach t() through variables', () => {
+    expect(dynamic.size).toBeGreaterThan(10)
+    const missing = [...dynamic].filter((k) => !hasTranslation('tr', k))
     expect(missing).toEqual([])
   })
 
@@ -38,7 +63,7 @@ describe('i18n catalogue', () => {
 
   it('has no stale entries that nothing uses', () => {
     const keys = [...catalogue.matchAll(/^ {2}'((?:[^'\\]|\\.)*)':/gm)].map((m) => m[1].replace(/\\'/g, "'"))
-    const known = new Set([...used, ...mainErrors])
+    const known = new Set([...used, ...dynamic, ...literals, ...mainErrors])
     expect(keys.filter((k) => !known.has(k))).toEqual([])
   })
 

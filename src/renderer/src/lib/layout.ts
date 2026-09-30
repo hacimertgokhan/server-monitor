@@ -23,10 +23,10 @@ export const MAX_SCALE = 1.8
 export const clampScale = (v: number): number => Math.max(MIN_SCALE, Math.min(MAX_SCALE, v))
 
 // ---------------------------------------------------------------- sub-tree geometry (flow units at scale 1)
-export const GROUP_W = 170
-export const GROUP_H = 50
-export const LEAF_W = 230
-export const LEAF_H = 44
+export const GROUP_W = 184
+export const GROUP_H = 54
+export const LEAF_W = 250
+export const LEAF_H = 50
 const LEAF_GAP = 8
 const GROUP_GAP = 16
 const COL_GAP_1 = 60 // card -> group column

@@ -246,3 +246,38 @@ function blank(id: string): ServerStatus {
     availability: { pct24h: null, pct7d: null, pct30d: null, incidents24h: 0, trackedSince: Date.now() }
   }
 }
+
+/** Plausible log output in each tool's real format, so the log viewer can be previewed without a server. */
+export function demoLogs(kind: 'docker' | 'pm2' | 'service', name: string, lines: number): string {
+  const now = Date.now()
+  const pick = <T>(a: T[], i: number): T => a[(i * 7 + name.length) % a.length]
+  const msgs = [
+    'GET /api/health 200 3ms',
+    'GET /api/servers 200 18ms',
+    'POST /api/login 200 41ms',
+    'cache hit ratio 0.93',
+    'worker heartbeat ok',
+    'WARN slow query took 1240ms: SELECT * FROM orders WHERE status = ?',
+    'listening on port 3000',
+    'GET /static/app.js 304 1ms',
+    'ERROR connect ECONNREFUSED 10.0.0.5:5432 (retrying in 5s)',
+    'INFO scheduled job "cleanup" finished in 212ms',
+    'DEBUG session store: 41 active sessions',
+    'POST /api/webhook 202 9ms'
+  ]
+  const out: string[] = []
+  const n = Math.min(lines, 400)
+  if (kind === 'pm2') out.push(`/home/deploy/.pm2/logs/${name}-out.log last ${Math.ceil(n * 0.7)} lines:`)
+  for (let i = 0; i < n; i++) {
+    const t = new Date(now - (n - i) * 4200 - (i % 3) * 700)
+    const iso = t.toISOString()
+    const msg = pick(msgs, i)
+    if (kind === 'docker') out.push(`${iso.replace('Z', '123456Z')} ${msg}`)
+    else if (kind === 'service') out.push(`${iso.slice(0, 19)}+0000 srv1 ${name}[${800 + (i % 5)}]: ${msg}`)
+    else {
+      if (i === Math.ceil(n * 0.7)) out.push(`/home/deploy/.pm2/logs/${name}-error.log last ${Math.floor(n * 0.3)} lines:`)
+      out.push(`${iso.slice(0, 19).replace('T', '-')}: ${msg}`)
+    }
+  }
+  return out.join('\n') + '\n'
+}

@@ -1,11 +1,11 @@
-import { Activity, Box, Cog, Container, HardDrive, Network, Pencil, Trash2 } from 'lucide-react'
+import { Activity, Box, Cog, Container, FileText, HardDrive, Network, Pencil, Trash2 } from 'lucide-react'
 import type { ReactNode } from 'react'
-import type { ServerInfo, ServerStatus } from '@shared/types'
+import type { LogKind, ServerInfo, ServerStatus } from '@shared/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useI18n } from '@/lib/i18n'
+import { useI18n, useT } from '@/lib/i18n'
 import { COLORS, formatBytes, formatDuration, formatRate, formatUptime, pctText } from '@/lib/utils'
 import { Bar, RingGauge, Sparkline } from './motion'
 import { StateDot, diskSummary } from './server-node'
@@ -16,11 +16,13 @@ interface Props {
   onClose: () => void
   onEdit?: () => void
   onDelete?: () => void
+  /** Opens the log viewer for a container / PM2 process / service of this server. */
+  onOpenLogs?: (kind: LogKind, name: string) => void
 }
 
 const Stat = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className="min-w-0 rounded-lg border border-border bg-card p-3">
-    <div className="truncate text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+    <div className="truncate text-[11.5px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
     <div className="mt-1 truncate text-sm text-foreground">{children}</div>
   </div>
 )
@@ -59,10 +61,54 @@ const Table = ({ head, rows }: { head: string[]; rows: ReactNode[][] }) => (
   </div>
 )
 
-export function ServerDetail({ info, status: s, onClose, onEdit, onDelete }: Props) {
+/** A service name that opens its journal when clicked (when the log viewer is available). */
+function ServiceBadge({
+  name,
+  variant,
+  onOpen
+}: {
+  name: string
+  variant: 'bad' | 'muted'
+  onOpen?: (kind: LogKind, name: string) => void
+}) {
+  const t = useT()
+  const badge = (
+    <Badge variant={variant} className="font-mono">
+      {name}
+    </Badge>
+  )
+  if (!onOpen) return badge
+  return (
+    <button
+      type="button"
+      title={t('Open logs')}
+      onClick={() => onOpen('service', name)}
+      className="rounded-md transition-opacity hover:opacity-80"
+    >
+      {badge}
+    </button>
+  )
+}
+
+export function ServerDetail({ info, status: s, onClose, onEdit, onDelete, onOpenLogs }: Props) {
   const { t, locale } = useI18n()
   const disk = diskSummary(s)
   const ring = { size: 84, stroke: 8 }
+  const logButton = (kind: LogKind, name: string): ReactNode =>
+    onOpenLogs ? (
+      <Button
+        key={`log-${name}`}
+        variant="secondary"
+        size="sm"
+        className="h-7 gap-1.5 px-2 font-sans"
+        onClick={() => onOpenLogs(kind, name)}
+      >
+        <FileText className="size-3.5" />
+        {t('Logs')}
+      </Button>
+    ) : (
+      ''
+    )
   return (
     <Dialog open={!!info} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-3xl" aria-describedby={undefined}>
@@ -136,11 +182,11 @@ export function ServerDetail({ info, status: s, onClose, onEdit, onDelete }: Pro
                   </div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="min-w-0 rounded-lg border border-border bg-card p-3">
-                      <div className="mb-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{t('CPU (recent)')}</div>
+                      <div className="mb-1 text-[11.5px] uppercase tracking-[0.14em] text-muted-foreground">{t('CPU (recent)')}</div>
                       <Sparkline values={s.cpuHistory} color={COLORS.info} height={48} />
                     </div>
                     <div className="min-w-0 rounded-lg border border-border bg-card p-3">
-                      <div className="mb-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{t('RAM (recent)')}</div>
+                      <div className="mb-1 text-[11.5px] uppercase tracking-[0.14em] text-muted-foreground">{t('RAM (recent)')}</div>
                       <Sparkline values={s.memHistory} color={COLORS.ok} height={48} />
                     </div>
                   </div>
@@ -161,7 +207,7 @@ export function ServerDetail({ info, status: s, onClose, onEdit, onDelete }: Pro
                     <Stat label={t('30 days')}>{pctText(s.availability.pct30d)}</Stat>
                     <Stat label={t('Outages (24h)')}>{s.availability.incidents24h}</Stat>
                   </div>
-                  <p className="break-words text-[11px] text-dim">
+                  <p className="break-words text-[12px] text-subtle">
                     {t('Availability is only measured while this app is running (since {date}).', {
                       date: new Date(s.availability.trackedSince).toLocaleDateString(locale)
                     })}{' '}
@@ -174,13 +220,14 @@ export function ServerDetail({ info, status: s, onClose, onEdit, onDelete }: Pro
                     <Empty>{t('Docker not found, or this user cannot access it (docker group / root may be required).')}</Empty>
                   ) : (
                     <Table
-                      head={[t('Container'), t('Image'), t('Status')]}
+                      head={[t('Container'), t('Image'), t('Status'), '']}
                       rows={s.docker.containers.map((c) => [
                         c.name,
                         c.image,
                         <Badge key={c.name} variant={c.state === 'running' ? 'ok' : c.state === 'restarting' ? 'warn' : 'bad'}>
                           {c.status}
-                        </Badge>
+                        </Badge>,
+                        logButton('docker', c.name)
                       ])}
                     />
                   )}
@@ -193,7 +240,7 @@ export function ServerDetail({ info, status: s, onClose, onEdit, onDelete }: Pro
                     <Empty>{t('PM2 is installed but its daemon is not running for this user.')}</Empty>
                   ) : (
                     <Table
-                      head={[t('Name'), t('Status'), 'CPU', t('Memory'), t('Restarts'), t('Age')]}
+                      head={[t('Name'), t('Status'), 'CPU', t('Memory'), t('Restarts'), t('Age'), '']}
                       rows={s.pm2.procs.map((p) => [
                         p.name,
                         <Badge key={p.name} variant={p.status === 'online' ? 'ok' : 'bad'}>
@@ -202,7 +249,8 @@ export function ServerDetail({ info, status: s, onClose, onEdit, onDelete }: Pro
                         `${p.cpu}%`,
                         formatBytes(p.memory),
                         p.restarts,
-                        p.uptimeMs ? formatDuration(p.uptimeMs) : '–'
+                        p.uptimeMs ? formatDuration(p.uptimeMs) : '–',
+                        logButton('pm2', p.name)
                       ])}
                     />
                   )}
@@ -217,17 +265,13 @@ export function ServerDetail({ info, status: s, onClose, onEdit, onDelete }: Pro
                         <div className="flex flex-wrap gap-1.5 rounded-lg bg-bad/10 p-3">
                           <span className="mr-1 text-xs text-bad">{t('Failed:')}</span>
                           {s.services.failed.map((f) => (
-                            <Badge key={f} variant="bad">
-                              {f}
-                            </Badge>
+                            <ServiceBadge key={f} name={f} variant="bad" onOpen={onOpenLogs} />
                           ))}
                         </div>
                       )}
                       <div className="flex max-h-[40vh] select-text flex-wrap gap-1.5 overflow-auto">
                         {s.services.running.map((f) => (
-                          <Badge key={f} variant="muted" className="font-mono">
-                            {f}
-                          </Badge>
+                          <ServiceBadge key={f} name={f} variant="muted" onOpen={onOpenLogs} />
                         ))}
                       </div>
                     </>
@@ -257,7 +301,7 @@ export function ServerDetail({ info, status: s, onClose, onEdit, onDelete }: Pro
                     <div key={d.mount} className="rounded-lg border border-border bg-card p-3">
                       <div className="mb-2 flex flex-wrap justify-between gap-x-3 text-xs">
                         <span className="min-w-0 truncate font-mono text-foreground">
-                          {d.mount} <span className="text-dim">{d.fs}</span>
+                          {d.mount} <span className="text-subtle">{d.fs}</span>
                         </span>
                         <span className="text-muted-foreground">
                           {formatBytes(d.used)} / {formatBytes(d.size)} · {d.pct.toFixed(0)}%

@@ -120,7 +120,7 @@ export function ServerDialog({ open, onOpenChange, api, editing }: Props) {
           {form.authType === 'password' ? (
             <div className="col-span-3 grid gap-1.5">
               <Label>
-                {t('Password')} {editing && <span className="text-dim">{t('(leave empty to keep the stored password)')}</span>}
+                {t('Password')} {editing && <span className="text-subtle">{t('(leave empty to keep the stored password)')}</span>}
               </Label>
               <Input type="password" value={form.password} onChange={(e) => set('password', e.target.value)} autoComplete="new-password" />
             </div>
