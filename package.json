@@ -1,6 +1,6 @@
 {
   "name": "server-monitor",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Live SSH server monitor: window, mini and desktop-wallpaper modes for Windows",
   "main": "./out/main/index.js",
   "private": true,
@@ -18,7 +18,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "npm run lint && npm run format:check && npm run typecheck && npm test",
-    "promo": "node scripts/promo/make-promo.mjs"
+    "promo": "node scripts/promo/make-promo.mjs",
+    "promo:stills": "node scripts/promo/make-promo.mjs --stills"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

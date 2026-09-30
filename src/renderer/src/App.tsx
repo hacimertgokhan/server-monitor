@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Plus, Sparkles } from 'lucide-react'
-import type { LayoutMode, ServerInfo } from '@shared/types'
+import type { ExpandMode, GroupKey, LayoutMode, ServerInfo } from '@shared/types'
+import { GROUP_KEYS } from '@/lib/tree'
 import { Button } from '@/components/ui/button'
 import { FlowView } from '@/components/blocks/flow-view'
 import { MiniView } from '@/components/blocks/mini-view'
@@ -47,6 +48,26 @@ function Shell({ m }: { m: Monitor }) {
     (id: string, v: number) => updateSettings({ cardScales: { ...settings.cardScales, [id]: clampScale(v) } }),
     [updateSettings, settings.cardScales]
   )
+  const expanded = settings.expanded
+  const anyExpanded = Object.values(expanded).some((g) => Object.keys(g).length > 0)
+  const onToggleGroup = useCallback(
+    (id: string, group: GroupKey) => {
+      const cur = { ...expanded[id] }
+      if (cur[group]) delete cur[group]
+      else cur[group] = 'few'
+      updateSettings({ expanded: { ...expanded, [id]: cur } })
+    },
+    [updateSettings, expanded]
+  )
+  const onGroupMode = useCallback(
+    (id: string, group: GroupKey, mode: ExpandMode) =>
+      updateSettings({ expanded: { ...expanded, [id]: { ...expanded[id], [group]: mode } } }),
+    [updateSettings, expanded]
+  )
+  const toggleAll = useCallback(() => {
+    if (anyExpanded) return updateSettings({ expanded: {} })
+    updateSettings({ expanded: Object.fromEntries(servers.map((s) => [s.id, Object.fromEntries(GROUP_KEYS.map((k) => [k, 'few']))])) })
+  }, [updateSettings, anyExpanded, servers])
   const resetLayout = useCallback(() => {
     updateSettings({ positions: {}, cardScales: {} })
     setResetKey((k) => k + 1)
@@ -60,6 +81,7 @@ function Shell({ m }: { m: Monitor }) {
     cardScale: settings.cardScale,
     cardScales: settings.cardScales,
     positions: settings.positions,
+    expanded,
     resetKey,
     fitKey
   }
@@ -137,11 +159,21 @@ function Shell({ m }: { m: Monitor }) {
         onSettings={() => setSettingsOpen(true)}
         onResetLayout={resetLayout}
         onFit={() => setFitKey((k) => k + 1)}
+        anyExpanded={anyExpanded}
+        onToggleAll={toggleAll}
         isDemo={m.isDemo}
         summary={summary}
       />
       <main className="relative min-h-0 flex-1">
-        <FlowView {...flow} interactive onSelect={setSelected} onFreePlacement={onFreePlacement} onCardScale={onOneCardScale} />
+        <FlowView
+          {...flow}
+          interactive
+          onSelect={setSelected}
+          onFreePlacement={onFreePlacement}
+          onCardScale={onOneCardScale}
+          onToggleGroup={onToggleGroup}
+          onGroupMode={onGroupMode}
+        />
 
         {servers.length === 0 && (
           <div className="pointer-events-none absolute inset-x-0 bottom-10 flex justify-center px-4">

@@ -137,8 +137,9 @@ async function drag(page, from, to, ms = 900) {
 async function main() {
   mkdirSync(OUT, { recursive: true })
   const tmp = mkdtempSync(join(tmpdir(), 'sm-promo-'))
-  console.log('• synthesising narration')
-  const say = synthesize(tmp)
+  const stillsOnly = process.argv.includes('--stills')
+  console.log(stillsOnly ? '• stills only' : '• synthesising narration')
+  const say = stillsOnly ? SCENES.map(() => ({ wav: '', dur: 1 })) : synthesize(tmp)
   const lens = SCENES.map((s, i) => Math.max(s.min, say[i].dur + 0.6))
   const starts = lens.map((_, i) => lens.slice(0, i).reduce((a, b) => a + b, 0))
   const total = lens.reduce((a, b) => a + b, 0) + TAIL
@@ -171,7 +172,23 @@ async function main() {
   await sp.getByRole('tab', { name: /Docker/ }).click()
   await sp.waitForTimeout(800)
   await sp.screenshot({ path: join(OUT, 'detail-docker.png') })
+  await sp.keyboard.press('Escape')
+  // expandable sub-trees: open Docker / PM2 / Services / Ports under one server
+  await sp.getByRole('button', { name: 'Grid' }).click()
+  const web = sp.locator('[data-id=demo-web] button')
+  for (const label of [/^8\/8$/, /^PM2 4\/4$/, /^11$/, /^5$/]) await web.filter({ hasText: label }).first().click()
+  await sp.waitForTimeout(600)
+  await sp.getByRole('button', { name: 'Fit to screen' }).click()
+  await sp.waitForTimeout(2200)
+  await sp.screenshot({ path: join(OUT, 'subtree.png') })
   await still.close()
+  if (process.argv.includes('--stills')) {
+    await browser.close()
+    await server.close()
+    rmSync(tmp, { recursive: true, force: true })
+    console.log('✔ stills only → ' + OUT)
+    return
+  }
 
   // ---- the recorded run
   console.log('• recording')

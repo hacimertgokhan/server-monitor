@@ -2,6 +2,11 @@ export type AuthType = 'password' | 'key'
 export type AppMode = 'window' | 'mini' | 'wallpaper'
 export type LayoutMode = 'radial' | 'grid' | 'free'
 export type Language = 'auto' | 'en' | 'tr'
+/** Sub-tree groups that can be expanded under a server card. */
+export type GroupKey = 'docker' | 'pm2' | 'services' | 'ports'
+/** 'few' shows the most relevant items, 'all' shows every item. */
+export type ExpandMode = 'few' | 'all'
+export type ExpandedGroups = Partial<Record<GroupKey, ExpandMode>>
 export type ConnState = 'connecting' | 'online' | 'offline'
 
 /** What the user types in the "add server" form. Secrets never leave the main process again. */
@@ -111,6 +116,8 @@ export interface Settings {
   /** Per-card size multiplier on top of `cardScale`, keyed by server id. */
   cardScales: Record<string, number>
   language: Language
+  /** Expanded sub-trees per server id. */
+  expanded: Record<string, ExpandedGroups>
   /** Free-layout positions, keyed by server id (and 'hub'). */
   positions: Record<string, { x: number; y: number }>
 }
@@ -153,5 +160,6 @@ export const DEFAULT_SETTINGS: Settings = {
   cardScale: 1,
   cardScales: {},
   language: 'auto',
+  expanded: {},
   positions: {}
 }

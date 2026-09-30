@@ -2,8 +2,8 @@ import { memo, useRef } from 'react'
 import type { PointerEvent } from 'react'
 import { Handle, Position, useReactFlow } from '@xyflow/react'
 import type { Node, NodeProps } from '@xyflow/react'
-import { ArrowDown, ArrowUp, Box, Cog, Container, Network, Timer } from 'lucide-react'
-import type { ServerInfo, ServerStatus } from '@shared/types'
+import { ArrowDown, ArrowUp, Box, ChevronRight, Cog, Container, Network, Timer } from 'lucide-react'
+import type { ExpandedGroups, GroupKey, ServerInfo, ServerStatus } from '@shared/types'
 import { Badge } from '@/components/ui/badge'
 import { useT } from '@/lib/i18n'
 import { CARD_W, clampScale } from '@/lib/layout'
@@ -19,6 +19,9 @@ export interface ServerNodeData extends Record<string, unknown> {
   base: number
   interactive: boolean
   onScale?: (id: string, perCardScale: number, commit: boolean) => void
+  /** Sub-trees currently open under this card, and the toggle for the chips. */
+  expanded?: ExpandedGroups
+  onToggleGroup?: (id: string, group: GroupKey) => void
 }
 export type ServerFlowNode = Node<ServerNodeData, 'server'>
 
@@ -85,9 +88,49 @@ function ResizeGrip({
   )
 }
 
+/** A status chip that doubles as the toggle for its sub-tree in the flowchart. */
+function GroupChip({
+  id,
+  group,
+  expanded,
+  onToggle,
+  variant,
+  title,
+  children
+}: {
+  id: string
+  group: GroupKey
+  expanded?: ExpandedGroups
+  onToggle?: (id: string, group: GroupKey) => void
+  variant: Parameters<typeof Badge>[0]['variant']
+  title: string
+  children: React.ReactNode
+}) {
+  const active = !!expanded?.[group]
+  const badge = (
+    <Badge variant={variant} title={title} className={cn(active && 'ring-1 ring-foreground/60')}>
+      {children}
+      {onToggle && <ChevronRight className={cn('size-3 opacity-70 transition-transform', active && 'rotate-90')} />}
+    </Badge>
+  )
+  if (!onToggle) return badge
+  return (
+    <button
+      type="button"
+      className="nodrag nopan cursor-pointer rounded-md"
+      onClick={(e) => {
+        e.stopPropagation()
+        onToggle(id, group)
+      }}
+    >
+      {badge}
+    </button>
+  )
+}
+
 function ServerNodeImpl({ data }: NodeProps<ServerFlowNode>) {
   const t = useT()
-  const { info, status: s, scale, base, interactive, onScale } = data
+  const { info, status: s, scale, base, interactive, onScale, expanded, onToggleGroup } = data
   const online = s?.state === 'online'
   const disk = diskSummary(s)
   const dockerWarn = !!s && s.docker.available && s.docker.running < s.docker.total
@@ -167,22 +210,43 @@ function ServerNodeImpl({ data }: NodeProps<ServerFlowNode>) {
           <Timer className="size-3" />
           {formatUptime(s?.uptimeSec ?? 0)}
         </Badge>
-        <Badge variant={!s?.docker.available ? 'outline' : dockerWarn ? 'warn' : 'ok'} title={t('Docker containers (running/total)')}>
+        <GroupChip
+          id={info.id}
+          group="docker"
+          expanded={expanded}
+          onToggle={onToggleGroup}
+          variant={!s?.docker.available ? 'outline' : dockerWarn ? 'warn' : 'ok'}
+          title={t('Docker containers (running/total)')}
+        >
           <Container className="size-3" />
           {s?.docker.available ? `${s.docker.running}/${s.docker.total}` : '–'}
-        </Badge>
-        <Badge variant={!s?.pm2.available ? 'outline' : pm2Bad ? 'bad' : 'ok'} title={t('PM2 processes (online/total)')}>
+        </GroupChip>
+        <GroupChip
+          id={info.id}
+          group="pm2"
+          expanded={expanded}
+          onToggle={onToggleGroup}
+          variant={!s?.pm2.available ? 'outline' : pm2Bad ? 'bad' : 'ok'}
+          title={t('PM2 processes (online/total)')}
+        >
           <Box className="size-3" />
           PM2 {s?.pm2.available && s.pm2.daemon ? `${s.pm2.online}/${s.pm2.total}` : '–'}
-        </Badge>
-        <Badge variant={!s?.services.available ? 'outline' : svcBad ? 'bad' : 'ok'} title={t('systemd services')}>
+        </GroupChip>
+        <GroupChip
+          id={info.id}
+          group="services"
+          expanded={expanded}
+          onToggle={onToggleGroup}
+          variant={!s?.services.available ? 'outline' : svcBad ? 'bad' : 'ok'}
+          title={t('systemd services')}
+        >
           <Cog className="size-3" />
           {s?.services.available ? (svcBad ? t('{n} failed', { n: s.services.failed.length }) : s.services.running.length) : '–'}
-        </Badge>
-        <Badge variant="info" title={t('Listening ports')}>
+        </GroupChip>
+        <GroupChip id={info.id} group="ports" expanded={expanded} onToggle={onToggleGroup} variant="info" title={t('Listening ports')}>
           <Network className="size-3" />
           {s?.ports.length ?? 0}
-        </Badge>
+        </GroupChip>
       </div>
 
       {interactive && onScale && <ResizeGrip id={info.id} scale={scale} base={base} onScale={onScale} />}
