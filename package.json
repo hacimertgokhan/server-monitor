@@ -1,6 +1,6 @@
 {
   "name": "server-monitor",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Live SSH server monitor: window, mini and desktop-wallpaper modes for Windows",
   "main": "./out/main/index.js",
   "private": true,

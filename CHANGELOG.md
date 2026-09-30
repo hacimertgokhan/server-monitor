@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.2.1] - 2026-09-30
+
+### Fixed
+
+- Launching the app manually while wallpaper mode was remembered left it invisible behind other windows (no taskbar entry). A manual launch now always opens the window; wallpaper mode is restored only when Windows starts the app at login.
+
 ## [0.2.0] - 2026-09-30
 
 ### Added
@@ -24,5 +30,6 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - Initial version: live SSH monitoring (CPU, RAM, disk, network, uptime, Docker, PM2, systemd services, open ports), flowchart UI with the user at the centre, window / mini / wallpaper modes, tray, credential encryption, SSH host-key pinning.
 
+[0.2.1]: https://github.com/hacimertgokhan/server-monitor/releases/tag/v0.2.1
 [0.2.0]: https://github.com/hacimertgokhan/server-monitor/releases/tag/v0.2.0
 [0.1.0]: https://github.com/hacimertgokhan/server-monitor/commits/main
