@@ -1,0 +1,7 @@
+out
+dist
+node_modules
+package-lock.json
+docs/media
+resources
+CHANGELOG.md

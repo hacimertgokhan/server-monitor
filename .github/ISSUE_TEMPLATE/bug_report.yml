@@ -1,0 +1,38 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you see instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      placeholder: 0.2.0
+  - type: input
+    id: os
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+  - type: input
+    id: remote
+    attributes:
+      label: Remote server OS (if relevant)
+      placeholder: Ubuntu 22.04, systemd
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: For wallpaper problems attach `%APPDATA%\server-monitor\wallpaper.log`. Remove hostnames and secrets first.
+      render: text
