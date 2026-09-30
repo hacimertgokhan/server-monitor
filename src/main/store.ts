@@ -39,10 +39,16 @@ function writeJson(name: string, data: unknown): void {
   renameSync(tmp, p)
 }
 
+/** Shown in the UI (translated there). */
+export const SECURE_STORAGE_MISSING =
+  'Secure credential storage is not available on this system. On Linux install a keyring (GNOME Keyring or KWallet), or use an SSH key without a passphrase.'
+
 function seal(secret: Secret): string | undefined {
   if (!secret.password && !secret.passphrase) return undefined
-  if (!safeStorage.isEncryptionAvailable()) {
-    throw new Error('OS credential encryption is unavailable — refusing to store secrets in plain text.')
+  // On Linux without a keyring Electron silently falls back to a hard-coded key ('basic_text'): that is not encryption.
+  const weak = process.platform === 'linux' && safeStorage.getSelectedStorageBackend?.() === 'basic_text'
+  if (!safeStorage.isEncryptionAvailable() || weak) {
+    throw new Error(SECURE_STORAGE_MISSING)
   }
   return safeStorage.encryptString(JSON.stringify(secret)).toString('base64')
 }
@@ -116,7 +122,9 @@ export function pinHostKey(id: string, fingerprint: string): void {
 let settings: Settings = { ...DEFAULT_SETTINGS }
 
 export function loadSettings(): Settings {
-  settings = { ...DEFAULT_SETTINGS, ...readJson<Partial<Settings>>('settings.json', {}) }
+  // Linux desktops often have no tray (GNOME), so hiding to it would make the app unreachable: default to real quit there.
+  const platformDefaults: Partial<Settings> = { closeToTray: process.platform !== 'linux' }
+  settings = { ...DEFAULT_SETTINGS, ...platformDefaults, ...readJson<Partial<Settings>>('settings.json', {}) }
   return settings
 }
 

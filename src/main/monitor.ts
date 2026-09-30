@@ -2,11 +2,13 @@ import { Client } from 'ssh2'
 import type { ConnectConfig } from 'ssh2'
 import { readFileSync } from 'fs'
 import { EventEmitter } from 'events'
-import type { ServerStatus, TestResult } from '@shared/types'
+import type { LogKind, LogRequest, LogResult, ServerStatus, TestResult } from '@shared/types'
 import type { ServerSecrets } from './store'
 import { availability, getSecrets, pinHostKey, recordCheck } from './store'
 import {
   FAST_SCRIPT,
+  buildLogScript,
+  logBody,
   SLOW_SCRIPT,
   cpuPct,
   parseCpu,
@@ -100,6 +102,59 @@ function run(client: Client, cmd: string, timeoutMs = EXEC_TIMEOUT_MS, requireEn
   })
 }
 
+export interface ExecResult {
+  stdout: string
+  stderr: string
+  code: number | null
+  signal: string | null
+  /** Output was cut at the byte limit. */
+  truncated: boolean
+  timedOut: boolean
+  ms: number
+}
+
+/** Runs one command on an open connection (used for agent requests, never for polling). */
+function execRaw(client: Client, command: string, timeoutMs: number, maxBytes: number): Promise<ExecResult> {
+  return new Promise((resolve, reject) => {
+    const t0 = Date.now()
+    client.exec(command, (err, stream) => {
+      if (err) return reject(err)
+      let stdout = ''
+      let stderr = ''
+      let bytes = 0
+      let truncated = false
+      let timedOut = false
+      const take = (chunk: Buffer, into: 'out' | 'err'): void => {
+        const room = maxBytes - bytes
+        if (room <= 0) {
+          truncated = true
+          return
+        }
+        const piece = chunk.length > room ? chunk.subarray(0, room) : chunk
+        if (piece.length < chunk.length) truncated = true
+        bytes += piece.length
+        if (into === 'out') stdout += piece.toString('utf8')
+        else stderr += piece.toString('utf8')
+      }
+      stream.on('data', (d: Buffer) => take(d, 'out'))
+      stream.stderr.on('data', (d: Buffer) => take(d, 'err'))
+      const timer = setTimeout(() => {
+        timedOut = true
+        try {
+          stream.signal('KILL')
+        } catch {
+          /* server may not support signals */
+        }
+        stream.close()
+      }, timeoutMs)
+      stream.on('close', (code?: number | null, signal?: string | null) => {
+        clearTimeout(timer)
+        resolve({ stdout, stderr, code: code ?? null, signal: signal ?? null, truncated, timedOut, ms: Date.now() - t0 })
+      })
+    })
+  })
+}
+
 const shQuote = (s: string): string => `'${s.replace(/'/g, `'\\''`)}'`
 
 /** One-off connectivity test used by the "add server" form (nothing is persisted). */
@@ -148,6 +203,36 @@ class Session {
     private readonly emit: (s: ServerStatus) => void
   ) {
     this.status = emptyStatus(id)
+  }
+
+  /** Runs an arbitrary command over this server's SSH connection. The caller must already have applied the policy. */
+  async exec(command: string, timeoutMs: number, maxBytes: number): Promise<ExecResult> {
+    const client = this.client
+    if (!client || this.status.state !== 'online') throw new Error('Server is offline')
+    return execRaw(client, command, timeoutMs, maxBytes)
+  }
+
+  /** Names this server itself reported, per kind: the only ones a log request may target. */
+  private knownNames(kind: LogKind): string[] {
+    const st = this.status
+    if (kind === 'docker') return st.docker.containers.map((c) => c.name)
+    if (kind === 'pm2') return st.pm2.procs.map((p) => p.name)
+    return [...st.services.running, ...st.services.failed]
+  }
+
+  async logs(kind: LogKind, name: string, lines: number): Promise<LogResult> {
+    const fail = (error: string): LogResult => ({ ok: false, text: '', error, at: Date.now() })
+    const client = this.client
+    if (!client || this.status.state !== 'online') return fail('Server is offline')
+    if (!this.knownNames(kind).includes(name)) return fail('Unknown item')
+    const script = buildLogScript(kind, name, lines)
+    if (!script) return fail('Unsafe name')
+    try {
+      const body = logBody(await run(client, script, 25_000, false))
+      return body === null ? fail('Connection closed') : { ok: true, text: body, at: Date.now() }
+    } catch (e) {
+      return fail(friendlyError(e))
+    }
   }
 
   snapshot(): ServerStatus {
@@ -355,6 +440,20 @@ export class Monitor extends EventEmitter {
   remove(id: string): void {
     this.sessions.get(id)?.stop()
     this.sessions.delete(id)
+  }
+
+  exec(serverId: string, command: string, timeoutMs: number, maxBytes: number): Promise<ExecResult> {
+    const s = this.sessions.get(serverId)
+    return s ? s.exec(command, timeoutMs, maxBytes) : Promise.reject(new Error('Unknown item'))
+  }
+
+  logs(req: LogRequest): Promise<LogResult> {
+    const s = this.sessions.get(req.serverId)
+    return s ? s.logs(req.kind, req.name, req.lines) : Promise.resolve({ ok: false, text: '', error: 'Unknown item', at: Date.now() })
+  }
+
+  status(id: string): ServerStatus | undefined {
+    return this.sessions.get(id)?.snapshot()
   }
 
   snapshot(): Record<string, ServerStatus> {

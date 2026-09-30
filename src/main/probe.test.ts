@@ -1,5 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { cpuPct, parseCpu, parseDisks, parseDocker, parseMem, parseNet, parsePm2, parsePorts, parseServices, splitSections } from './probe'
+import {
+  LOG_LINES_MAX,
+  LOG_LINES_MIN,
+  LOG_MAX_BYTES,
+  SAFE_NAME,
+  buildLogScript,
+  cpuPct,
+  logBody,
+  parseCpu,
+  parseDisks,
+  parseDocker,
+  parseMem,
+  parseNet,
+  parsePm2,
+  parsePorts,
+  parseServices,
+  splitSections
+} from './probe'
 
 describe('parsePorts', () => {
   it('parses ss output, merges IPv4/IPv6 and flags exposure', () => {
@@ -134,5 +151,58 @@ describe('counters', () => {
 describe('splitSections', () => {
   it('handles CRLF and multiple sections', () => {
     expect(Object.keys(splitSections('@@A\r\nx\r\n@@B\r\ny'))).toEqual(['A', 'B'])
+  })
+})
+
+describe('buildLogScript', () => {
+  it('builds read-only tail commands for each kind', () => {
+    const docker = buildLogScript('docker', 'web-1', 200)!
+    expect(docker).toContain("docker logs --tail 200 --timestamps 'web-1' 2>&1")
+    expect(docker.trim().endsWith("echo '@@END'")).toBe(true)
+    expect(buildLogScript('pm2', 'api', 50)).toContain("logs 'api' --nostream --lines 50")
+    expect(buildLogScript('service', 'nginx', 100)).toContain("journalctl -u 'nginx' -n 100 --no-pager")
+  })
+
+  it('never lets a name break out of the quotes', () => {
+    const bad = [
+      "a'b",
+      'a b',
+      'a;rm -rf /',
+      '$(id)',
+      '`id`',
+      'a|b',
+      'a&&b',
+      'a\nb',
+      '../x',
+      '-rf',
+      '',
+      'x'.repeat(200),
+      "web'; touch /tmp/pwn; '"
+    ]
+    for (const name of bad) {
+      expect(buildLogScript('docker', name, 100), name).toBeNull()
+      expect(buildLogScript('pm2', name, 100), name).toBeNull()
+      expect(buildLogScript('service', name, 100), name).toBeNull()
+    }
+    for (const ok of ['web', 'my_app.v2', 'redis-server', 'nginx@1', 'app:latest']) expect(SAFE_NAME.test(ok), ok).toBe(true)
+  })
+
+  it('clamps the line count and caps the response size', () => {
+    expect(buildLogScript('docker', 'a', 1)).toContain(`--tail ${LOG_LINES_MIN} `)
+    expect(buildLogScript('docker', 'a', 999999)).toContain(`--tail ${LOG_LINES_MAX} `)
+    expect(buildLogScript('docker', 'a', Number.NaN)).toContain('--tail 200 ')
+    expect(buildLogScript('docker', 'a', 100)).toContain(`tail -c ${LOG_MAX_BYTES}`)
+  })
+
+  it('only queries PM2 when its daemon already runs (jlist/logs would otherwise start one)', () => {
+    expect(buildLogScript('pm2', 'api', 100)).toContain('rpc.sock')
+  })
+})
+
+describe('logBody', () => {
+  it('returns the output before the end marker and detects truncation', () => {
+    expect(logBody(['line1', 'line2', '@@END', ''].join('\r\n'))).toBe('line1\nline2\n')
+    expect(logBody('partial output')).toBeNull()
+    expect(logBody('@@END\n')).toBe('')
   })
 })

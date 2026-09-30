@@ -19,7 +19,7 @@ function chunk(type: string, data: Buffer): Buffer {
   return Buffer.concat([len, td, crc])
 }
 
-export function png(size: number): Buffer {
+export function png(size: number, rgb: [number, number, number] = [0xc9, 0xc7, 0xc7]): Buffer {
   const rows: Buffer[] = []
   const c = (size - 1) / 2
   for (let y = 0; y < size; y++) {
@@ -30,9 +30,9 @@ export function png(size: number): Buffer {
       const dot = Math.max(0, 1 - Math.max(0, d - 0.28) / 0.1)
       const a = Math.min(1, Math.max(ring, d < 0.4 ? dot : 0))
       const o = 1 + x * 4
-      row[o] = 0xc9
-      row[o + 1] = 0xc7
-      row[o + 2] = 0xc7
+      row[o] = rgb[0]
+      row[o + 1] = rgb[1]
+      row[o + 2] = rgb[2]
       row[o + 3] = Math.round(a * 255)
     }
     rows.push(row)
