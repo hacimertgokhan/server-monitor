@@ -1,3 +1,4 @@
+import type { AuditEntry, Capabilities, McpState, NewClientInput, Policy } from './mcp'
 export type AuthType = 'password' | 'key'
 export type AppMode = 'window' | 'mini' | 'wallpaper'
 export type LayoutMode = 'radial' | 'grid' | 'free'
@@ -118,6 +119,12 @@ export interface Settings {
   language: Language
   /** Expanded sub-trees per server id. */
   expanded: Record<string, ExpandedGroups>
+  /** Desktop notifications for new problems (offline, high load, failed services ...). */
+  notifications: boolean
+  /** Utilisation (%) above which CPU / RAM / disk count as a problem. */
+  thresholds: { cpu: number; ram: number; disk: number }
+  /** Show only servers that currently have a problem. */
+  problemsOnly: boolean
   /** Free-layout positions, keyed by server id (and 'hub'). */
   positions: Record<string, { x: number; y: number }>
 }
@@ -135,7 +142,67 @@ export interface TestResult {
   os?: string
 }
 
+export type LogKind = 'docker' | 'pm2' | 'service'
+
+export interface LogRequest {
+  serverId: string
+  kind: LogKind
+  name: string
+  /** Number of trailing lines (clamped to 10..2000 by the main process). */
+  lines: number
+}
+
+export interface LogResult {
+  ok: boolean
+  text: string
+  error?: string
+  /** Epoch ms when the server answered. */
+  at: number
+}
+
+export interface AppInfo {
+  version: string
+  platform: string
+  packaged: boolean
+}
+
+export interface UpdateInfo {
+  ok: boolean
+  current: string
+  latest?: string
+  url?: string
+  newer?: boolean
+  error?: string
+}
+
+/** Result of an MCP management call: the new state (and a token, only when one was just created), or an error. */
+export type McpResult = { ok: true; state: McpState; token?: string } | { ok: false; error: string }
+
+export interface McpApi {
+  getState(): Promise<McpState>
+  setEnabled(on: boolean): Promise<McpResult>
+  setPort(port: number): Promise<McpResult>
+  createAgent(input: NewClientInput): Promise<McpResult>
+  updateAgent(id: string, patch: { name?: string; enabled?: boolean; servers?: 'all' | string[]; caps?: Capabilities }): Promise<McpResult>
+  rotateToken(id: string): Promise<McpResult>
+  deleteAgent(id: string): Promise<McpResult>
+  setPolicy(policy: Policy): Promise<McpResult>
+  getAudit(limit?: number): Promise<AuditEntry[]>
+  clearAudit(): Promise<void>
+  onChange(cb: (s: McpState) => void): () => void
+}
+
 export interface Api {
+  mcp: McpApi
+  /** process.platform of the host: 'win32' | 'darwin' | 'linux'. */
+  platform: string
+  getAppInfo(): Promise<AppInfo>
+  /** Opens a whitelisted https/mailto link in the default browser / mail client. */
+  openExternal(url: string): Promise<void>
+  /** Asks GitHub for the latest release. Only ever runs when the user presses the button. */
+  checkUpdates(): Promise<UpdateInfo>
+  /** Tails a container / PM2 process / systemd unit on a server (read-only). */
+  fetchLogs(req: LogRequest): Promise<LogResult>
   getState(): Promise<AppState>
   saveServer(input: ServerInput): Promise<ServerInfo>
   removeServer(id: string): Promise<void>
@@ -161,5 +228,8 @@ export const DEFAULT_SETTINGS: Settings = {
   cardScales: {},
   language: 'auto',
   expanded: {},
+  notifications: true,
+  thresholds: { cpu: 90, ram: 90, disk: 90 },
+  problemsOnly: false,
   positions: {}
 }
