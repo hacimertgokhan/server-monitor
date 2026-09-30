@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-09-30
+
+### Added
+
+- **macOS and Linux support**: native window chrome, menu-bar/tray icon, `⌘⌥M` shortcut, live wallpaper via the desktop window level (macOS) or the desktop window type (Linux/X11), XDG autostart, dock reactivation, keyring check for stored passwords, and installers (macOS dmg/zip for Intel and Apple Silicon, Linux AppImage/deb) built in CI alongside Windows.
+- **Agents (MCP)**: a built-in MCP server (Streamable HTTP on loopback) with per-agent tokens, permissions and server scope; tools `list_servers`, `get_server_status`, `list_issues`, `get_policy`, `get_logs` and `run_command`; command modes _Ask me_, _Allow list only_, _Deny list_ and _No commands_ with editable rules and a test box; built-in blocks for destructive commands; native approval dialog; connected-agents view and audit log.
+- **Log viewer** for Docker containers, PM2 processes and systemd services: search with highlighting, level filters, live refresh, copy and save. Opens from the flowchart, the detail tables and the problems panel.
+- **Problems panel**, desktop notifications for new problems with configurable CPU/RAM/disk thresholds, server search (`/`) and a "problems only" filter.
+- **About** section with author links (hacimertgokhan.com) and a manual "Check for updates".
+- Card and text sizes were increased and low-contrast text was brightened for readability; fonts now include macOS and Linux system fonts.
+
+### Changed
+
+- Manual launches always open the window (a remembered wallpaper mode is restored only at login).
+
+### Security
+
+- Log names are validated against a strict pattern and against the server's own listing before they reach a shell.
+
 ## [0.3.0] - 2026-09-30
 
 ### Added
