@@ -1,0 +1,18 @@
+appId: io.github.hacimertgokhan.servermonitor
+productName: Server Monitor
+artifactName: Server-Monitor-Setup-${version}.${ext}
+directories:
+  buildResources: resources
+  output: dist
+files:
+  - out/**/*
+  - package.json
+win:
+  icon: resources/icon.png
+  target:
+    - target: nsis
+      arch: [x64]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: Server Monitor
