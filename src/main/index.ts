@@ -205,9 +205,12 @@ function refreshTray(): void {
   )
 }
 
+/** Passed by the Windows login item so we can tell an automatic start from the user launching the app. */
+const AUTOSTART_ARG = '--autostart'
+
 function applyAutoStart(on: boolean): void {
   // Only register the packaged app; in dev this would register electron.exe itself.
-  if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: on })
+  if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: on, args: [AUTOSTART_ARG] })
 }
 
 function registerIpc(): void {
@@ -291,6 +294,9 @@ app.whenReady().then(() => {
     else showWindowMode()
   })
 
+  // A manual launch always opens the normal window: a remembered wallpaper mode is invisible behind other windows,
+  // which looks like "the app shows nothing". Only an automatic start at login restores the wallpaper.
+  if (getSettings().mode === 'wallpaper' && !process.argv.includes(AUTOSTART_ARG)) patchSettings({ mode: 'window' })
   win = createWindow(getSettings().mode)
 
   screen.on('display-metrics-changed', () => {
