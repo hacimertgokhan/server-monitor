@@ -1,0 +1,161 @@
+@import 'tailwindcss';
+
+/* Monochrome Ash palette: #000000 #272727 #5c5959 #969393 #c9c7c7 + soft status accents. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--foreground);
+  --color-destructive: var(--bad);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-dim: var(--dim);
+  --color-ok: var(--ok);
+  --color-bad: var(--bad);
+  --color-warn: var(--warn);
+  --color-caution: var(--caution);
+  --color-info: var(--info);
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Cascadia Mono', 'Cascadia Code', Consolas, monospace;
+  --radius-lg: 14px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+}
+
+:root {
+  --background: #000000;
+  --foreground: #c9c7c7;
+  --card: #0b0b0b;
+  --popover: #0e0e0e;
+  --primary: #c9c7c7;
+  --primary-foreground: #000000;
+  --secondary: #272727;
+  --muted: #1a1a1a;
+  --muted-foreground: #969393;
+  --accent: #272727;
+  --border: #272727;
+  --input: #272727;
+  --ring: #5c5959;
+  --dim: #5c5959;
+  --ok: #8fbf9f;
+  --bad: #d98282;
+  --warn: #e0a070;
+  --caution: #d9c47a;
+  --info: #7fa8d1;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.drag {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Slim scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--secondary);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--dim);
+}
+
+/* React Flow — dark, minimal */
+.react-flow {
+  --xy-background-color: transparent;
+  --xy-edge-stroke-default: var(--dim);
+  --xy-node-border-default: none;
+  --xy-node-boxshadow-selected-default: none;
+}
+.react-flow__attribution {
+  display: none;
+}
+.react-flow__node {
+  cursor: pointer;
+}
+.react-flow__node:focus,
+.react-flow__node:focus-visible {
+  outline: none;
+}
+.react-flow__handle {
+  opacity: 0;
+  pointer-events: none;
+  width: 1px;
+  height: 1px;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  top: 50% !important;
+  left: 50% !important;
+  transform: none !important;
+}
+
+@keyframes hub-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+.hub-ring {
+  animation: hub-ping 4.5s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+}
+
+@keyframes dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.dot-live {
+  animation: dot-pulse 2.4s ease-in-out infinite;
+}
+
+.spark-path {
+  transition: d 1.1s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hub-ring,
+  .dot-live {
+    animation: none;
+  }
+}
