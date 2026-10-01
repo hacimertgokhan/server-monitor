@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-10-01
+
+### Added
+
+- **Root mode**: a Termius-style workspace (switch with *Flowchart / Root* in the top bar). Servers are listed on the left; click one to open a real SSH terminal in front of you. Sessions stay alive while you look at the flowchart. The server detail dialog has *Terminal* and *Files* buttons.
+- **SSH terminal** (xterm.js, real `xterm-256color` PTY): `nano`, `vim`, `htop`, `tmux`, colours and `cat` work like in any SSH client. Tabs, several sessions per server, copy / paste (Ctrl+Shift+C/V, Ctrl+C with a selection, right click), copy on select, search, clickable links (Ctrl+click), font zoom (Ctrl+scroll), reconnect, flow control for huge outputs.
+- **Terminal themes and settings**: 12 colour themes (Monochrome Ash, Dracula, Nord, Tokyo Night, One Dark, Catppuccin, Gruvbox, Monokai, Solarized, Matrix, GitHub Light ...), bundled JetBrains Mono, font size, cursor style and blinking, scrollback; changes apply live.
+- **Integrated file manager (SFTP)**: browse, sort, filter, create, rename, delete, change permissions, edit text files, upload files and folders (also by drag and drop), download files and folders with progress and cancel, *Open terminal here*. Downloads never overwrite local files.
+
+### Security
+
+- Terminals and the file manager open their own SSH connections and use the same pinned host keys as monitoring. Agents (MCP) have no access to them.
+
 ## [0.4.0] - 2026-09-30
 
 ### Added

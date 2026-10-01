@@ -32,6 +32,11 @@
 - **Tray / menu-bar app**: closing the window keeps monitoring in the background. `Ctrl+Alt+M` (`⌘⌥M` on macOS) always brings you back from wallpaper mode.
 - **English and Turkish** UI (automatic, switchable in Settings).
 
+**Root mode: terminal and files**
+
+- **SSH terminal** like Termius: servers on the left, click one to open a real PTY terminal (`nano`, `vim`, `htop` work). Tabs, copy / paste, search, 12 colour themes, font and cursor settings.
+- **File manager (SFTP)**: browse, edit text files, upload / download files and folders with progress, drag and drop, permissions.
+
 **Agents (MCP)**
 
 - A built-in **MCP server** lets agents such as Claude Code or Cursor list your servers, read status and logs and, if you allow it, run commands over your existing SSH connections. See [Agents (MCP)](#agents-mcp).

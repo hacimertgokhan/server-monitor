@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, net, Notification, screen, shell, Tray } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, globalShortcut, ipcMain, Menu, net, Notification, screen, shell, Tray } from 'electron'
 import { join } from 'path'
 import { bySeverity, detectIssues, issueText, recoveredText } from '@shared/issues'
 import type { IssueLang } from '@shared/issues'
@@ -24,6 +24,9 @@ import {
   stopUptime,
   upsertServer
 } from './store'
+import { connectServer } from './ssh-connect'
+import { SftpHub } from './sftp'
+import { TerminalHub } from './terminal'
 import { checkForUpdates } from './updates'
 import { attachToDesktop, wallpaperBounds } from './wallpaper'
 
@@ -34,6 +37,8 @@ let quitting = false
 const tracker = new IssueTracker()
 let mcpStore: McpStore
 let mcp: McpService
+let terminals: TerminalHub
+let sftp: SftpHub
 
 const BG = '#000000'
 const APP_ID = 'io.github.hacimertgokhan.servermonitor'
@@ -324,6 +329,8 @@ function registerIpc(): void {
 
   ipcMain.handle('server:remove', (_e, id: string) => {
     monitor.remove(id)
+    terminals.closeServer(id)
+    sftp.closeServer(id)
     tracker.forget(id)
     removeServer(id)
     mcpStore.pruneServers(listServers().map((x) => x.id))
@@ -432,6 +439,44 @@ function registerIpc(): void {
     mcpStore.clearAudit()
   })
 
+  // ---- terminal (Root mode)
+  ipcMain.handle('term:open', (_e, id: unknown, serverId: unknown, cols: unknown, rows: unknown) =>
+    terminals.open(id, serverId, cols, rows)
+  )
+  ipcMain.on('term:input', (_e, id: unknown, data: unknown) => terminals.input(id, data))
+  ipcMain.on('term:resize', (_e, id: unknown, cols: unknown, rows: unknown) => terminals.resize(id, cols, rows))
+  ipcMain.on('term:ack', (_e, id: unknown, n: unknown) => terminals.ack(id, n))
+  ipcMain.on('term:close', (_e, id: unknown) => terminals.close(id))
+
+  // ---- file manager (SFTP)
+  ipcMain.handle('sftp:list', (_e, serverId: unknown, path: unknown) => sftp.list(serverId, path))
+  ipcMain.handle('sftp:mkdir', (_e, serverId: unknown, path: unknown) => sftp.mkdir(serverId, path))
+  ipcMain.handle('sftp:create', (_e, serverId: unknown, path: unknown) => sftp.create(serverId, path))
+  ipcMain.handle('sftp:rename', (_e, serverId: unknown, from: unknown, to: unknown) => sftp.rename(serverId, from, to))
+  ipcMain.handle('sftp:remove', (_e, serverId: unknown, paths: unknown) => sftp.remove(serverId, paths))
+  ipcMain.handle('sftp:chmod', (_e, serverId: unknown, path: unknown, mode: unknown) => sftp.chmod(serverId, path, mode))
+  ipcMain.handle('sftp:read', (_e, serverId: unknown, path: unknown) => sftp.readText(serverId, path))
+  ipcMain.handle('sftp:write', (_e, serverId: unknown, path: unknown, text: unknown) => sftp.writeText(serverId, path, text))
+  ipcMain.handle('sftp:download', (_e, serverId: unknown, paths: unknown) => sftp.download(serverId, paths))
+  ipcMain.handle('sftp:uploadPick', (_e, serverId: unknown, dir: unknown, kind: unknown) => sftp.uploadPick(serverId, dir, kind))
+  ipcMain.handle('sftp:upload', (_e, serverId: unknown, dir: unknown, paths: unknown) => sftp.upload(serverId, dir, paths))
+  ipcMain.on('sftp:cancel', (_e, id: unknown) => sftp.cancel(id))
+
+  ipcMain.handle('clipboard:read', () => clipboard.readText())
+  ipcMain.handle('clipboard:write', (_e, text: unknown) => {
+    if (typeof text === 'string' && text.length <= 10_000_000) clipboard.writeText(text)
+  })
+  ipcMain.handle('link:open-web', async (_e, url: unknown) => {
+    // Only for links the user Ctrl/Cmd+clicked inside the terminal: plain http(s), nothing else.
+    if (typeof url !== 'string' || url.length > 2048) return
+    try {
+      const u = new URL(url)
+      if (u.protocol === 'https:' || u.protocol === 'http:') await shell.openExternal(u.toString())
+    } catch {
+      /* not a URL */
+    }
+  })
+
   ipcMain.handle('app:hide', () => win?.hide())
   ipcMain.handle('app:quit', () => app.quit())
 }
@@ -458,6 +503,28 @@ app.whenReady().then(() => {
     exec: (id, cmd, timeoutMs, maxBytes) => monitor.exec(id, cmd, timeoutMs, maxBytes),
     approve: approveCommand,
     changed: pushMcp
+  })
+  terminals = new TerminalHub({
+    connect: connectServer,
+    emitData: (id, data) => broadcast('term:data', { id, data }),
+    emitState: (e) => broadcast('term:state', e)
+  })
+  sftp = new SftpHub({
+    connect: connectServer,
+    emitTransfer: (t) => broadcast('sftp:transfer', t),
+    pickSaveDir: async () => {
+      const opts: Electron.OpenDialogOptions = { title: 'Save to', properties: ['openDirectory', 'createDirectory'] }
+      const r = win && !win.isDestroyed() ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
+      return r.canceled ? null : (r.filePaths[0] ?? null)
+    },
+    pickUpload: async (kind) => {
+      const opts: Electron.OpenDialogOptions = {
+        title: kind === 'folder' ? 'Upload folder' : 'Upload files',
+        properties: kind === 'folder' ? ['openDirectory'] : ['openFile', 'multiSelections', 'showHiddenFiles']
+      }
+      const r = win && !win.isDestroyed() ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
+      return r.canceled ? null : r.filePaths
+    }
   })
   registerIpc()
   for (const s of listServers()) monitor.add(s.id)
@@ -494,6 +561,8 @@ app.on('before-quit', () => {
   quitting = true
   globalShortcut.unregisterAll()
   monitor?.stopAll()
+  terminals?.closeAll()
+  sftp?.closeAll()
   void mcp?.stop()
   mcpStore?.flush()
   flushSettings()

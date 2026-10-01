@@ -1,4 +1,6 @@
 import type { AuditEntry, Capabilities, McpState, NewClientInput, Policy } from './mcp'
+import { DEFAULT_TERMINAL } from './remote'
+import type { ClipboardApi, SftpApi, TermApi, TerminalSettings } from './remote'
 export type AuthType = 'password' | 'key'
 export type AppMode = 'window' | 'mini' | 'wallpaper'
 export type LayoutMode = 'radial' | 'grid' | 'free'
@@ -127,6 +129,8 @@ export interface Settings {
   problemsOnly: boolean
   /** Free-layout positions, keyed by server id (and 'hub'). */
   positions: Record<string, { x: number; y: number }>
+  /** Look and behaviour of the built-in SSH terminal. */
+  terminal: TerminalSettings
 }
 
 export interface AppState {
@@ -194,6 +198,13 @@ export interface McpApi {
 
 export interface Api {
   mcp: McpApi
+  /** Built-in SSH terminal (Root mode). */
+  term: TermApi
+  /** Built-in SFTP file manager (Root mode). */
+  sftp: SftpApi
+  clipboard: ClipboardApi
+  /** Opens a link the user clicked in the terminal (http/https only, after Ctrl/Cmd+click). */
+  openWebLink(url: string): Promise<void>
   /** process.platform of the host: 'win32' | 'darwin' | 'linux'. */
   platform: string
   getAppInfo(): Promise<AppInfo>
@@ -231,5 +242,6 @@ export const DEFAULT_SETTINGS: Settings = {
   notifications: true,
   thresholds: { cpu: 90, ram: 90, disk: 90 },
   problemsOnly: false,
-  positions: {}
+  positions: {},
+  terminal: DEFAULT_TERMINAL
 }

@@ -40,7 +40,7 @@ for (const f of sources.filter((p) => p.includes(join('src', 'renderer')))) {
 }
 
 // Error strings produced by the main process and translated in the renderer via t(error).
-const mainErrors = ['monitor.ts', 'store.ts', 'mcp-store.ts'].flatMap((f) =>
+const mainErrors = ['monitor.ts', 'store.ts', 'mcp-store.ts', 'ssh-connect.ts', 'sftp.ts', 'terminal.ts'].flatMap((f) =>
   [...readFileSync(join(SRC, 'main', f), 'utf8').matchAll(/'([A-Z][^'\n]* [^'\n]*)'/g)].map((m) => m[1])
 )
 

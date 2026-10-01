@@ -1,4 +1,4 @@
-import { Activity, Box, Cog, Container, FileText, HardDrive, Network, Pencil, Trash2 } from 'lucide-react'
+import { Activity, Box, Cog, Container, FileText, FolderOpen, HardDrive, Network, Pencil, SquareTerminal, Trash2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { LogKind, ServerInfo, ServerStatus } from '@shared/types'
 import { Badge } from '@/components/ui/badge'
@@ -16,6 +16,9 @@ interface Props {
   onClose: () => void
   onEdit?: () => void
   onDelete?: () => void
+  /** Root mode: open an SSH terminal / the file manager for this server. */
+  onOpenTerminal?: () => void
+  onOpenFiles?: () => void
   /** Opens the log viewer for a container / PM2 process / service of this server. */
   onOpenLogs?: (kind: LogKind, name: string) => void
 }
@@ -90,7 +93,7 @@ function ServiceBadge({
   )
 }
 
-export function ServerDetail({ info, status: s, onClose, onEdit, onDelete, onOpenLogs }: Props) {
+export function ServerDetail({ info, status: s, onClose, onEdit, onDelete, onOpenTerminal, onOpenFiles, onOpenLogs }: Props) {
   const { t, locale } = useI18n()
   const disk = diskSummary(s)
   const ring = { size: 84, stroke: 8 }
@@ -127,6 +130,16 @@ export function ServerDetail({ info, status: s, onClose, onEdit, onDelete, onOpe
                   </DialogDescription>
                 </div>
                 <div className="flex shrink-0 gap-1">
+                  {onOpenTerminal && (
+                    <Button variant="secondary" size="sm" onClick={onOpenTerminal} title={t('Open terminal')}>
+                      <SquareTerminal /> {t('Terminal')}
+                    </Button>
+                  )}
+                  {onOpenFiles && (
+                    <Button variant="secondary" size="sm" onClick={onOpenFiles} title={t('Files (SFTP)')}>
+                      <FolderOpen /> {t('Files')}
+                    </Button>
+                  )}
                   {onEdit && (
                     <Button variant="ghost" size="icon" onClick={onEdit} title={t('Edit')} aria-label={t('Edit')}>
                       <Pencil />

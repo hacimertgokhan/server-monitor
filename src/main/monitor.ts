@@ -1,9 +1,9 @@
 import { Client } from 'ssh2'
 import type { ConnectConfig } from 'ssh2'
-import { readFileSync } from 'fs'
 import { EventEmitter } from 'events'
 import type { LogKind, LogRequest, LogResult, ServerStatus, TestResult } from '@shared/types'
 import type { ServerSecrets } from './store'
+import { buildConnectConfig, friendlyError } from './ssh-connect'
 import { availability, getSecrets, pinHostKey, recordCheck } from './store'
 import {
   FAST_SCRIPT,
@@ -56,28 +56,6 @@ function emptyStatus(id: string): ServerStatus {
     memHistory: [],
     availability: availability(id)
   }
-}
-
-function buildConnectConfig(s: ServerSecrets, onHostKey?: (fp: string) => boolean): ConnectConfig {
-  const cfg: ConnectConfig = {
-    host: s.host,
-    port: s.port,
-    username: s.username,
-    readyTimeout: 12_000,
-    keepaliveInterval: 10_000,
-    keepaliveCountMax: 3,
-    hostHash: 'sha256',
-    hostVerifier: ((fp: string) => (onHostKey ? onHostKey(fp) : true)) as unknown as ConnectConfig['hostVerifier']
-  }
-  if (s.authType === 'key') {
-    if (!s.keyPath) throw new Error('No private key file selected')
-    cfg.privateKey = readFileSync(s.keyPath)
-    if (s.passphrase) cfg.passphrase = s.passphrase
-  } else {
-    cfg.password = s.password
-    cfg.tryKeyboard = true
-  }
-  return cfg
 }
 
 /** Every probe script ends with an `@@END` marker; a missing marker means the connection died mid-command. */
@@ -175,15 +153,6 @@ export async function testConnection(s: ServerSecrets): Promise<TestResult> {
   } finally {
     client.end()
   }
-}
-
-function friendlyError(e: unknown): string {
-  const m = e instanceof Error ? e.message : String(e)
-  if (/authentication/i.test(m)) return 'Authentication failed (wrong user, password or key)'
-  if (/ENOTFOUND/.test(m)) return 'Host not found (DNS)'
-  if (/ECONNREFUSED/.test(m)) return 'Connection refused (SSH port closed?)'
-  if (/ETIMEDOUT|Timed out/i.test(m)) return 'Connection timed out'
-  return m
 }
 
 class Session {

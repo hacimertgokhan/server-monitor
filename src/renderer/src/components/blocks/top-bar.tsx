@@ -5,6 +5,8 @@ import {
   Maximize,
   MonitorPlay,
   Move,
+  SquareTerminal,
+  Workflow,
   Orbit,
   PictureInPicture2,
   Plug,
@@ -20,7 +22,12 @@ import { isMac } from '@/lib/use-monitor'
 import { cn, formatRate } from '@/lib/utils'
 import { AnimatedNumber } from './motion'
 
+export type View = 'flow' | 'root'
+
 interface Props {
+  /** Flowchart dashboard or Root mode (terminals and files). */
+  view: View
+  onView: (v: View) => void
   mode: AppMode
   onMode: (m: AppMode) => void
   layout: LayoutMode
@@ -43,11 +50,14 @@ interface Props {
 function Segmented<T extends string>({
   value,
   onChange,
-  items
+  items,
+  showLabels
 }: {
   value: T
   onChange: (v: T) => void
   items: { id: T; label: string; icon: typeof LayoutGrid }[]
+  /** Always show the text next to the icon (default: only on very wide windows). */
+  showLabels?: boolean
 }) {
   return (
     <div className="no-drag flex gap-0.5 rounded-md bg-muted p-0.5">
@@ -64,7 +74,7 @@ function Segmented<T extends string>({
           )}
         >
           <Icon className="size-3.5" />
-          <span className="hidden 2xl:inline">{label}</span>
+          <span className={showLabels ? 'hidden md:inline' : 'hidden 2xl:inline'}>{label}</span>
         </button>
       ))}
     </div>
@@ -72,6 +82,8 @@ function Segmented<T extends string>({
 }
 
 export function TopBar({
+  view,
+  onView,
   mode,
   onMode,
   layout,
@@ -127,28 +139,41 @@ export function TopBar({
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5">
-        <Segmented<LayoutMode>
-          value={layout}
-          onChange={onLayout}
+        <Segmented<View>
+          showLabels
+          value={view}
+          onChange={onView}
           items={[
-            { id: 'radial', label: t('Auto (radial)'), icon: Orbit },
-            { id: 'grid', label: t('Grid'), icon: Grid3x3 },
-            { id: 'free', label: t('Free placement'), icon: Move }
+            { id: 'flow', label: t('Flowchart'), icon: Workflow },
+            { id: 'root', label: t('Root'), icon: SquareTerminal }
           ]}
         />
-        <label className="no-drag hidden items-center gap-2 px-1 text-muted-foreground lg:flex" title={t('Card size')}>
-          <Maximize className="size-3.5" />
-          <input
-            type="range"
-            aria-label={t('Card size')}
-            min={MIN_SCALE}
-            max={MAX_SCALE - 0.3}
-            step={0.05}
-            value={cardScale}
-            onChange={(e) => onCardScale(Number(e.target.value))}
-            className="no-drag h-1 w-20 cursor-pointer"
-          />
-        </label>
+        {view === 'flow' && (
+          <>
+            <Segmented<LayoutMode>
+              value={layout}
+              onChange={onLayout}
+              items={[
+                { id: 'radial', label: t('Auto (radial)'), icon: Orbit },
+                { id: 'grid', label: t('Grid'), icon: Grid3x3 },
+                { id: 'free', label: t('Free placement'), icon: Move }
+              ]}
+            />
+            <label className="no-drag hidden items-center gap-2 px-1 text-muted-foreground lg:flex" title={t('Card size')}>
+              <Maximize className="size-3.5" />
+              <input
+                type="range"
+                aria-label={t('Card size')}
+                min={MIN_SCALE}
+                max={MAX_SCALE - 0.3}
+                step={0.05}
+                value={cardScale}
+                onChange={(e) => onCardScale(Number(e.target.value))}
+                className="no-drag h-1 w-20 cursor-pointer"
+              />
+            </label>
+          </>
+        )}
         <Segmented<AppMode>
           value={mode}
           onChange={onMode}
@@ -158,23 +183,27 @@ export function TopBar({
             { id: 'wallpaper', label: t('Wallpaper'), icon: MonitorPlay }
           ]}
         />
-        <Button
-          variant="ghost"
-          size="icon"
-          title={anyExpanded ? t('Collapse all') : t('Expand all')}
-          aria-label={anyExpanded ? t('Collapse all') : t('Expand all')}
-          aria-pressed={anyExpanded}
-          onClick={onToggleAll}
-          className={anyExpanded ? 'text-foreground' : undefined}
-        >
-          <ListTree />
-        </Button>
-        <Button variant="ghost" size="icon" title={t('Fit to screen')} aria-label={t('Fit to screen')} onClick={onFit}>
-          <Maximize />
-        </Button>
-        <Button variant="ghost" size="icon" title={t('Reset layout')} aria-label={t('Reset layout')} onClick={onResetLayout}>
-          <RotateCcw />
-        </Button>
+        {view === 'flow' && (
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              title={anyExpanded ? t('Collapse all') : t('Expand all')}
+              aria-label={anyExpanded ? t('Collapse all') : t('Expand all')}
+              aria-pressed={anyExpanded}
+              onClick={onToggleAll}
+              className={anyExpanded ? 'text-foreground' : undefined}
+            >
+              <ListTree />
+            </Button>
+            <Button variant="ghost" size="icon" title={t('Fit to screen')} aria-label={t('Fit to screen')} onClick={onFit}>
+              <Maximize />
+            </Button>
+            <Button variant="ghost" size="icon" title={t('Reset layout')} aria-label={t('Reset layout')} onClick={onResetLayout}>
+              <RotateCcw />
+            </Button>
+          </>
+        )}
         <Button variant="ghost" size="icon" title={t('Agents (MCP)')} aria-label={t('Agents (MCP)')} onClick={onMcp} className="relative">
           <Plug />
           {mcpActive && <span className="absolute right-1 top-1 size-1.5 rounded-full bg-ok" />}
