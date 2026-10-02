@@ -55,6 +55,7 @@ const api: Api = {
   },
   openWebLink: (url) => ipcRenderer.invoke('link:open-web', url),
   getState: () => ipcRenderer.invoke('state:get'),
+  reloadData: () => ipcRenderer.invoke('data:reload'),
   saveServer: (i) => ipcRenderer.invoke('server:save', i),
   removeServer: (id) => ipcRenderer.invoke('server:remove', id),
   testServer: (i) => ipcRenderer.invoke('server:test', i),

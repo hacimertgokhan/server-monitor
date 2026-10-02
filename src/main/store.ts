@@ -1,7 +1,6 @@
 import { app, safeStorage } from 'electron'
-import { existsSync, readFileSync, writeFileSync, renameSync, mkdirSync } from 'fs'
-import { join, dirname } from 'path'
 import { randomUUID } from 'crypto'
+import { SafeJson } from './safe-json'
 import { DEFAULT_SETTINGS } from '@shared/types'
 import type { Availability, ServerInfo, ServerInput, Settings } from '@shared/types'
 
@@ -19,24 +18,20 @@ export interface ServerSecrets extends ServerInfo, Secret {
   hostKey?: string
 }
 
-const file = (name: string): string => join(app.getPath('userData'), name)
+/** Unreadable files are retried, restored from `.bak` or left untouched; writes keep a `.bak` copy (see safe-json.ts). */
+const json = new SafeJson(() => app.getPath('userData'))
 
-function readJson<T>(name: string, fallback: T): T {
-  try {
-    const p = file(name)
-    if (!existsSync(p)) return fallback
-    return JSON.parse(readFileSync(p, 'utf8')) as T
-  } catch {
-    return fallback
-  }
-}
+const readJson = <T>(name: string, fallback: T): T => json.read(name, fallback)
+const writeJson = (name: string, data: unknown): void => void json.write(name, data, { backup: name !== 'uptime.json' })
 
-function writeJson(name: string, data: unknown): void {
-  const p = file(name)
-  mkdirSync(dirname(p), { recursive: true })
-  const tmp = `${p}.tmp`
-  writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8')
-  renameSync(tmp, p)
+/** Data files that could not be read at startup. They stay untouched on disk; the UI offers a retry. */
+export const dataProblems = (): string[] => [...json.problems]
+
+/** Reads servers and settings again (the "Retry" button after a failed start). */
+export function reloadData(): void {
+  json.clearProblems()
+  loadServers()
+  loadSettings()
 }
 
 /** Shown in the UI (translated there). */
@@ -79,7 +74,10 @@ export function getSecrets(id: string): ServerSecrets | undefined {
   return { ...toInfo(s), ...unseal(s.secret), hostKey: s.hostKey }
 }
 
+export const DATA_UNREADABLE = 'Your saved servers could not be read, so changes are blocked to protect them. Press Retry first.'
+
 export function upsertServer(input: ServerInput): ServerInfo {
+  if (json.problems.has('servers.json')) throw new Error(DATA_UNREADABLE)
   const existing = input.id ? servers.find((s) => s.id === input.id) : undefined
   const prevSecret = unseal(existing?.secret)
   const secret: Secret = {
@@ -105,6 +103,7 @@ export function upsertServer(input: ServerInput): ServerInfo {
 }
 
 export function removeServer(id: string): void {
+  if (json.problems.has('servers.json')) throw new Error(DATA_UNREADABLE)
   servers = servers.filter((s) => s.id !== id)
   writeJson('servers.json', servers)
   delete uptime[id]

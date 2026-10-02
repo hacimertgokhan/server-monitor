@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { CheckCircle2, Plus, SearchX, Sparkles } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Plus, RefreshCw, SearchX, Sparkles } from 'lucide-react'
 import { bySeverity, detectIssues } from '@shared/issues'
 import type { TerminalSettings } from '@shared/remote'
 import type { ExpandMode, GroupKey, LayoutMode, LogKind, ServerInfo } from '@shared/types'
@@ -250,6 +250,20 @@ function Shell({ m }: { m: Monitor }) {
         isDemo={m.isDemo}
         summary={summary}
       />
+      {m.dataIssues.length > 0 && (
+        <div role="alert" className="flex shrink-0 items-center gap-3 border-b border-bad/30 bg-bad/10 px-4 py-2 text-xs text-bad">
+          <AlertTriangle className="size-4 shrink-0" />
+          <span className="min-w-0 flex-1">
+            <span className="font-medium">{t('Your saved data could not be read right now.')}</span>{' '}
+            <span className="text-bad/80">
+              {t('Nothing was deleted or changed. Another program may be locking the files. Press Retry.')}
+            </span>
+          </span>
+          <Button size="sm" variant="secondary" className="shrink-0" onClick={() => void m.reloadData()}>
+            <RefreshCw /> {t('Retry')}
+          </Button>
+        </div>
+      )}
       {view === 'flow' && (
         <main className="relative min-h-0 flex-1">
           <FlowView

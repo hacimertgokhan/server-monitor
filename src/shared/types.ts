@@ -137,6 +137,8 @@ export interface AppState {
   servers: ServerInfo[]
   statuses: Record<string, ServerStatus>
   settings: Settings
+  /** Data files that could not be read at startup; they are left untouched and the UI offers a retry. */
+  dataIssues: string[]
 }
 
 export interface TestResult {
@@ -215,6 +217,8 @@ export interface Api {
   /** Tails a container / PM2 process / systemd unit on a server (read-only). */
   fetchLogs(req: LogRequest): Promise<LogResult>
   getState(): Promise<AppState>
+  /** Reads the saved servers and settings again (after a failed start) and returns the fresh state. */
+  reloadData(): Promise<AppState>
   saveServer(input: ServerInput): Promise<ServerInfo>
   removeServer(id: string): Promise<void>
   testServer(input: ServerInput): Promise<TestResult>

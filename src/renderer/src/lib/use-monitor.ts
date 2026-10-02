@@ -30,6 +30,7 @@ export function useMonitor() {
   const [realStatuses, setRealStatuses] = useState<Record<string, ServerStatus>>({})
   const [settings, setSettings] = useState<Settings>({ ...DEFAULT_SETTINGS, mode: queryMode() })
   const [ready, setReady] = useState(!hasBackend)
+  const [dataIssues, setDataIssues] = useState<string[]>([])
   const [demoOn, setDemoOn] = useState(!hasBackend || readDemo())
   const [demoStatuses, setDemoStatuses] = useState<Record<string, ServerStatus>>({})
   const demoRef = useRef<Record<string, ServerStatus>>({})
@@ -43,6 +44,7 @@ export function useMonitor() {
       setRealServers(s.servers)
       setRealStatuses(s.statuses)
       setSettings(s.settings)
+      setDataIssues(s.dataIssues)
       setReady(true)
     })
     const offs = [
@@ -69,6 +71,28 @@ export function useMonitor() {
     const t = setInterval(step, 2500)
     return () => clearInterval(t)
   }, [useDemo])
+
+  /** Asks the main process to read the saved servers and settings again (after a failed start). */
+  const reloadData = useCallback(async () => {
+    if (!api) return
+    const s = await api.reloadData()
+    setRealServers(s.servers)
+    setRealStatuses(s.statuses)
+    setSettings(s.settings)
+    setDataIssues(s.dataIssues)
+  }, [])
+
+  // A file that was locked at startup (antivirus, sync tool ...) usually becomes readable seconds later: retry quietly.
+  const hasIssues = dataIssues.length > 0
+  useEffect(() => {
+    if (!hasIssues) return
+    let tries = 0
+    const id = setInterval(() => {
+      if (++tries > 12) return clearInterval(id)
+      void reloadData()
+    }, 4000)
+    return () => clearInterval(id)
+  }, [hasIssues, reloadData])
 
   const toggleDemo = useCallback((on: boolean) => {
     setDemoOn(on)
@@ -110,5 +134,19 @@ export function useMonitor() {
     }
   }, [servers, statuses])
 
-  return { api, ready, servers, statuses, settings, summary, isDemo: useDemo, demoOn, toggleDemo, setMode, updateSettings }
+  return {
+    api,
+    ready,
+    dataIssues,
+    reloadData,
+    servers,
+    statuses,
+    settings,
+    summary,
+    isDemo: useDemo,
+    demoOn,
+    toggleDemo,
+    setMode,
+    updateSettings
+  }
 }

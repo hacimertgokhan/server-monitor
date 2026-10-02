@@ -3,7 +3,7 @@ import { join } from 'path'
 import { bySeverity, detectIssues, issueText, recoveredText } from '@shared/issues'
 import type { IssueLang } from '@shared/issues'
 import type { McpState, NewClientInput } from '@shared/mcp'
-import type { AppMode, LogRequest, McpResult, ServerInput, ServerStatus, Settings } from '@shared/types'
+import type { AppMode, AppState, LogRequest, McpResult, ServerInput, ServerStatus, Settings } from '@shared/types'
 import { appIcon, trayIcon } from './icon'
 import { isAllowedLink } from './links'
 import { McpService } from './mcp-server'
@@ -19,7 +19,9 @@ import {
   loadServers,
   loadSettings,
   loadUptime,
+  dataProblems,
   patchSettings,
+  reloadData,
   removeServer,
   stopUptime,
   upsertServer
@@ -314,11 +316,20 @@ async function mcpCall(fn: () => { token?: string } | void | Promise<{ token?: s
 const LOG_KINDS = new Set(['docker', 'pm2', 'service'])
 
 function registerIpc(): void {
-  ipcMain.handle('state:get', () => ({
+  const fullState = (): AppState => ({
     servers: listServers(),
     statuses: monitor.snapshot(),
-    settings: getSettings()
-  }))
+    settings: getSettings(),
+    dataIssues: dataProblems()
+  })
+  ipcMain.handle('state:get', fullState)
+  ipcMain.handle('data:reload', () => {
+    reloadData()
+    for (const s of listServers()) monitor.add(s.id)
+    broadcast('servers', listServers())
+    broadcast('settings', getSettings())
+    return fullState()
+  })
 
   ipcMain.handle('server:save', (_e, input: ServerInput) => {
     const info = upsertServer(input)

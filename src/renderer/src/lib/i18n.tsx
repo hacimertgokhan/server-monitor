@@ -404,6 +404,11 @@ const tr: Record<string, string> = {
   Close: 'Kapat',
   'File content': 'Dosya içeriği',
   'Ln {line}, Col {col}': 'Satır {line}, Sütun {col}',
+  'Your saved data could not be read right now.': 'Kayıtlı verileriniz şu an okunamadı.',
+  'Nothing was deleted or changed. Another program may be locking the files. Press Retry.':
+    'Hiçbir şey silinmedi veya değişmedi. Dosyaları başka bir program kilitliyor olabilir. «Tekrar dene» düğmesine basın.',
+  'Your saved servers could not be read, so changes are blocked to protect them. Press Retry first.':
+    'Kayıtlı sunucularınız okunamadığı için, onları korumak amacıyla değişiklikler engellendi. Önce «Tekrar dene» düğmesine basın.',
   // errors coming from the main process
   'No such file or folder': 'Böyle bir dosya veya klasör yok',
   'Permission denied': 'İzin reddedildi',

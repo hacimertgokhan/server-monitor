@@ -1,5 +1,6 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'crypto'
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'fs'
+import { SafeJson } from './safe-json'
 import { join } from 'path'
 import { DEFAULT_PORT, DEFAULT_POLICY, sanitizeCaps, sanitizePolicy } from '@shared/mcp'
 import type { AuditEntry, Capabilities, McpClientView, NewClientInput, Policy } from '@shared/mcp'
@@ -32,11 +33,13 @@ export class McpStore {
   private saveTimer: NodeJS.Timeout | undefined
   private readonly file: string
   private readonly auditFile: string
+  private readonly json: SafeJson
 
   constructor(
     private readonly dir: string,
     private readonly now: () => number = Date.now
   ) {
+    this.json = new SafeJson(() => dir)
     this.file = join(dir, 'mcp.json')
     this.auditFile = join(dir, 'mcp-audit.jsonl')
     this.cfg = this.load()
@@ -46,8 +49,10 @@ export class McpStore {
   private load(): StoredConfig {
     const fresh: StoredConfig = { enabled: false, port: DEFAULT_PORT, clients: [], policy: { ...DEFAULT_POLICY } }
     try {
-      if (!existsSync(this.file)) return fresh
-      const raw = JSON.parse(readFileSync(this.file, 'utf8')) as Partial<StoredConfig>
+      // Unreadable file: retried and restored from mcp.json.bak. If that fails the file stays untouched on disk and we
+      // start with defaults for this session (a damaged file must never lock the user out of the app).
+      const raw = this.json.read<Partial<StoredConfig> | null>('mcp.json', null)
+      if (!raw) return fresh
       const clients = Array.isArray(raw.clients)
         ? raw.clients.filter((c) => c && typeof c.id === 'string' && typeof c.tokenHash === 'string').slice(0, MAX_CLIENTS)
         : []
@@ -78,10 +83,16 @@ export class McpStore {
   }
 
   private write(): void {
-    mkdirSync(this.dir, { recursive: true })
-    const tmp = `${this.file}.tmp`
-    writeFileSync(tmp, JSON.stringify(this.cfg, null, 2), { encoding: 'utf8', mode: 0o600 })
-    renameSync(tmp, this.file)
+    if (this.json.write('mcp.json', this.cfg, { mode: 0o600 })) return
+    // The existing file could not be read, so it was never overwritten: keep it aside and start a fresh one, so the
+    // user can still configure agents (the old file is not lost, it is renamed).
+    try {
+      renameSync(this.file, `${this.file}.unreadable-${this.now()}`)
+    } catch {
+      /* nothing to rename */
+    }
+    this.json.clearProblems()
+    this.json.write('mcp.json', this.cfg, { mode: 0o600 })
   }
 
   private save(): void {

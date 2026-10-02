@@ -1,6 +1,6 @@
 {
   "name": "server-monitor",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Live SSH server monitor for Windows, macOS and Linux: flowchart dashboard as a window, mini widget or live desktop wallpaper",
   "main": "./out/main/index.js",
   "private": true,

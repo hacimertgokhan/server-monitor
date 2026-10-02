@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.5.1] - 2026-10-02
+
+### Fixed
+
+- **Servers and settings could appear empty after starting the app.** A data file that was briefly unreadable at startup (for example locked by an antivirus or sync tool) was treated as "no data", and the next save could overwrite the real file. Reads are now retried and restored from a `.bak` copy; a file that still cannot be read is never overwritten. The window shows a warning with a **Retry** button, retries on its own every few seconds, and blocks adding or removing servers until the data is readable. Every save keeps the previous good version as `<file>.bak`, and problems are logged to `data-load.log` in the app data folder.
+
 ## [0.5.0] - 2026-10-01
 
 ### Added
